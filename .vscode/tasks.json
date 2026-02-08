@@ -1,0 +1,21 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cmake",
+            "label": "Build Voxel Engine (CMake)",
+            "command": "build",
+            "targets": [
+                "VoxelEngine"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "detail": "Efficient incremental build using CMake and Ninja."
+        }
+    ]
+}
