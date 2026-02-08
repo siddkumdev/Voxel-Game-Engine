@@ -1,3 +1,0 @@
-C:/Apps/Game engine/build/CMakeFiles/VoxelEngine.dir
-C:/Apps/Game engine/build/CMakeFiles/edit_cache.dir
-C:/Apps/Game engine/build/CMakeFiles/rebuild_cache.dir
