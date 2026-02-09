@@ -51,6 +51,8 @@ target_link_libraries(VoxelEngine
     gdi32
 )
 
+target_compile_definitions(VoxelEngine PRIVATE GLFW_INCLUDE_NONE)
+
 # Create a folder in the build directory for the shaders
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/shaders")
 
