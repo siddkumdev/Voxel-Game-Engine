@@ -30,6 +30,19 @@ public:
     void AddChunk(Chunk* chunk);
     void DeleteSelectedObject();
 
+    // Level management
+    void NewLevel();
+    void SaveLevel(const std::string& path);
+    void LoadLevel(const std::string& path);
+
+    // Explosion trigger (for testing)
+    void TriggerExplosion(glm::vec3 center); // NEW: Helper to spawn explosion
+
+    // Public variables for GUI to access directly
+    bool m_ExplosionMode = false;
+    float m_ExplosionRadius = 5.0f;
+    float m_ExplosionForce = 50.0f;    
+
 private:
     void ProcessInput();
     void Update(float deltaTime);

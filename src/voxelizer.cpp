@@ -28,7 +28,9 @@ bool Voxelizer::LoadAndVoxelize(const std::string& path, Chunk& targetChunk) {
 
     if (!loaded) return false;
 
-    // Delegate voxelization to Chunk which handles it via LoadMesh -> VoxelizeStoredMesh
+    // NEW: Save the path so we can serialize it later
+    targetChunk.m_ModelPath = path;
+
     targetChunk.LoadMesh(vertices, indices);
     return true;
 }

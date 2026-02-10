@@ -1,7 +1,7 @@
 #include "application.h"
 #include "gui.h"
 #include "voxelizer.h"
-#include "model_loader.h"
+#include "serializer.h" // Ensure this is included
 
 #include <iostream>
 #include <algorithm>
@@ -56,7 +56,7 @@ void Application::MouseButtonCallback(GLFWwindow* window, int button, int action
 // --- APPLICATION IMPLEMENTATION ---
 
 Application::Application()
-    : m_Camera(glm::vec3(0.0f, 10.0f, 30.0f))
+    : m_Camera(glm::vec3(0.0f, 0.0f, 2.0f))
 {
     m_LastX = 1280 / 2.0f;
     m_LastY = 720 / 2.0f;
@@ -105,15 +105,12 @@ bool Application::Init() {
 
     m_Shader = new Shader("shaders/Basic.glsl");
 
-    // Default Cube
-    Chunk* c = new Chunk(16, 1.0f);
+    // Default Cube - FIXED CONSTRUCTOR
+    Chunk* c = new Chunk(16);
     c->GenerateCube();
     c->name = "Default Cube";
     c->physicsBody.isStatic = true;
     m_SceneObjects.push_back(c);
-
-    // Default selection
-    // m_SelectedObject = c;
 
     return true;
 }
@@ -125,13 +122,9 @@ void Application::Run() {
         m_LastFrame = currentFrame;
 
         glfwPollEvents();
-
-        // Start GUI Frame early for input handling
         GUI::BeginFrame();
-
         ProcessInput();
 
-        // Handle Selection (Deferred from click)
         if (m_MouseClicked) {
              if (!ImGui::GetIO().WantCaptureMouse) {
                 int width, height;
@@ -148,11 +141,6 @@ void Application::Run() {
     }
 }
 
-void Application::Update(float deltaTime) {
-    for (Chunk* chunk : m_SceneObjects) {
-         chunk->UpdatePhysics(deltaTime);
-    }
-}
 
 void Application::ProcessInput() {
     if (glfwGetKey(m_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -207,40 +195,36 @@ void Application::Render() {
         chunk->Render(*m_Shader, true);
     }
 
-    // Render GUI
     GUI::Render(*this);
-    GUI::EndFrame(); // Finishes rendering GUI
-
+    GUI::EndFrame();
     glfwSwapBuffers(m_Window);
 }
 
+// application.cpp
+
 void Application::HandleSelection(float mouseX, float mouseY, int screenW, int screenH) {
+    // 1. Ray Calculation (Same as before)
     float x = (2.0f * mouseX) / screenW - 1.0f;
     float y = 1.0f - (2.0f * mouseY) / screenH;
-
     glm::vec4 ray_clip = glm::vec4(x, y, -1.0, 1.0);
     glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)screenW / (float)screenH, 0.1f, 100.0f);
     glm::vec4 ray_eye = glm::inverse(proj) * ray_clip;
     ray_eye = glm::vec4(ray_eye.x, ray_eye.y, -1.0, 0.0);
-
     glm::mat4 view = m_Camera.GetViewMatrix();
-    glm::vec3 ray_wor = (glm::inverse(view) * ray_eye);
-    ray_wor = glm::normalize(ray_wor);
+    glm::vec3 ray_wor = glm::normalize(glm::vec3(glm::inverse(view) * ray_eye));
 
     Ray ray;
     ray.origin = m_Camera.Position;
     ray.direction = ray_wor;
 
+    // 2. Raycast against Scene
     float closestDist = 10000.0f;
     Chunk* hitObject = nullptr;
 
     for (Chunk* chunk : m_SceneObjects) {
-        glm::vec3 minB = chunk->GetPosition();
-        float worldSize = chunk->GetWorldSize();
-        glm::vec3 maxB = minB + glm::vec3(worldSize);
-
+        std::pair<glm::vec3, glm::vec3> aabb = chunk->GetAABB();
         float dist;
-        if (IntersectRayAABB(ray, minB, maxB, dist)) {
+        if (IntersectRayAABB(ray, aabb.first, aabb.second, dist)) {
             if (dist < closestDist) {
                 closestDist = dist;
                 hitObject = chunk;
@@ -248,7 +232,19 @@ void Application::HandleSelection(float mouseX, float mouseY, int screenW, int s
         }
     }
 
-    m_SelectedObject = hitObject;
+    // 3. Handle Result based on Mode
+    if (hitObject) {
+        if (m_ExplosionMode) {
+            // Calculate exact hit point
+            glm::vec3 hitPoint = ray.origin + (ray.direction * closestDist);
+            TriggerExplosion(hitPoint);
+        } else {
+            // Normal Select Mode
+            m_SelectedObject = hitObject;
+        }
+    } else {
+        if (!m_ExplosionMode) m_SelectedObject = nullptr;
+    }
 }
 
 void Application::AddChunk(Chunk* chunk) {
@@ -284,5 +280,81 @@ void Application::OnScroll(double xoffset, double yoffset) {
 void Application::OnMouseButton(int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         m_MouseClicked = true;
+    }
+}
+
+void Application::TriggerExplosion(glm::vec3 target) {
+    PointExplosion exp;
+    exp.center = target;
+    exp.radius = m_ExplosionRadius;       // Radius in world units
+    exp.force = m_ExplosionForce;       // Strength
+    exp.falloff = true;
+    exp.falloffFactor = 1.0f;
+
+    std::vector<Chunk*> allNewDebris;
+
+    for (Chunk* c : m_SceneObjects) {
+        // Run explode on all chunks
+        std::vector<Chunk*> debris = c->Explode(exp);
+        allNewDebris.insert(allNewDebris.end(), debris.begin(), debris.end());
+    }
+
+    // Add generated debris to scene
+    for (Chunk* d : allNewDebris) {
+        m_SceneObjects.push_back(d);
+    }
+}
+
+void Application::Update(float deltaTime) {
+    // 1. Physics Integration
+    for (Chunk* chunk : m_SceneObjects) {
+         chunk->UpdatePhysics(deltaTime);
+    }
+
+    // 2. Naive Collision Detection (O(N^2))
+    // In a real engine, use a Spatial Hash or Octree
+    for (size_t i = 0; i < m_SceneObjects.size(); i++) {
+        for (size_t j = i + 1; j < m_SceneObjects.size(); j++) {
+            Chunk* c1 = m_SceneObjects[i];
+            Chunk* c2 = m_SceneObjects[j];
+            
+            if (c1->CheckCollision(*c2)) {
+                c1->ResolveCollision(*c2);
+            }
+        }
+    }
+}
+
+void Application::NewLevel() {
+    for (Chunk* c : m_SceneObjects) delete c;
+    m_SceneObjects.clear();
+    m_SelectedObject = nullptr;
+
+    // FIXED CONSTRUCTOR
+    Chunk* c = new Chunk(16);
+    c->GenerateCube();
+    c->name = "Default Cube";
+    c->physicsBody.isStatic = true;
+    m_SceneObjects.push_back(c);
+}
+
+void Application::SaveLevel(const std::string& path) {
+    if (LevelSerializer::SaveLevel(path, m_SceneObjects)) {
+        std::cout << "Level saved successfully to " << path << std::endl;
+    } else {
+        std::cout << "Failed to save level!" << std::endl;
+    }
+}
+
+void Application::LoadLevel(const std::string& path) {
+    for (Chunk* c : m_SceneObjects) delete c;
+    m_SceneObjects.clear();
+    m_SelectedObject = nullptr;
+
+    if (LevelSerializer::LoadLevel(path, m_SceneObjects)) {
+        std::cout << "Level loaded: " << path << std::endl;
+    } else {
+        std::cout << "Failed to load level!" << std::endl;
+        NewLevel();
     }
 }

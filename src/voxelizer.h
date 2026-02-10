@@ -9,7 +9,7 @@
 class Voxelizer {
 public:
     // Loads a model file and fills the provided Chunk with voxels
-    bool LoadAndVoxelize(const std::string& path, Chunk& targetChunk);
+    static bool LoadAndVoxelize(const std::string& path, Chunk& targetChunk);
 };
 
 #endif
