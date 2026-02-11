@@ -126,3 +126,32 @@ void Chunk::VoxelizeStoredMesh() {
     }
     UpdateMesh();
 }
+
+void Chunk::RecalculateBounds() {
+    boundsMin = glm::ivec3(m_ChunkSize);
+    boundsMax = glm::ivec3(0);
+    bool empty = true;
+
+    for (int x = 0; x < m_ChunkSize; x++) {
+        for (int y = 0; y < m_ChunkSize; y++) {
+            for (int z = 0; z < m_ChunkSize; z++) {
+                if (IsActive(x, y, z)) {
+                    empty = false;
+                    boundsMin.x = std::min(boundsMin.x, x);
+                    boundsMin.y = std::min(boundsMin.y, y);
+                    boundsMin.z = std::min(boundsMin.z, z);
+                    boundsMax.x = std::max(boundsMax.x, x);
+                    boundsMax.y = std::max(boundsMax.y, y);
+                    boundsMax.z = std::max(boundsMax.z, z);
+                }
+            }
+        }
+    }
+    
+    // Safety for completely empty chunks
+    if (empty) {
+        boundsMin = glm::ivec3(0);
+        boundsMax = glm::ivec3(0);
+    }
+}
+

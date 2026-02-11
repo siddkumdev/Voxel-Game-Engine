@@ -44,6 +44,11 @@ public:
     float m_ExplosionForce = 50.0f;    
 
 private:
+    struct Ray {
+    glm::vec3 origin;
+    glm::vec3 direction;
+};
+    static bool IntersectRayAABB(const Ray& ray, glm::vec3 boxMin, glm::vec3 boxMax, float& tMin);
     void ProcessInput();
     void Update(float deltaTime);
     void Render();
@@ -74,4 +79,9 @@ private:
     bool m_FirstMouse = true;
     bool m_RightClickHolding = false;
     bool m_MouseClicked = false;
+
+    unsigned int m_DebugCubeVAO = 0;
+    unsigned int m_DebugCubeVBO = 0;
+    void InitDebugCube();
+    void RenderDebugBox(const glm::vec3& min, const glm::vec3& max, const glm::vec3& color);
 };

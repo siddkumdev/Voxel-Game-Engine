@@ -19,15 +19,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(DEP_DIR "${CMAKE_SOURCE_DIR}/dependencies")
 
 # 2. Include Directories (Replacement for your -I flags)
+# 2. Include Directories
 include_directories(
     "src"
+    "src/Core"
+    "src/Chunk"
+    "src/Gui"
+    "src/Utils"
     "${DEP_DIR}/GLAD/include"
     "${DEP_DIR}/GLFW/include"
     "${DEP_DIR}/GLM"
     "${DEP_DIR}/IMGUI"
     "${DEP_DIR}/IMGUI/backends"
 )
-
 # 3. Find Source Files
 file(GLOB_RECURSE ENGINE_SOURCES "src/*.cpp" "src/*.c")
 file(GLOB IMGUI_SOURCES "${DEP_DIR}/IMGUI/*.cpp")

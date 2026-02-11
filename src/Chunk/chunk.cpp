@@ -6,7 +6,6 @@
 Chunk::Chunk(int resolution) 
     : m_ChunkSize(resolution), m_VertexCount(0)
 {
-    // Reserve memory
     int volume = m_ChunkSize * m_ChunkSize * m_ChunkSize;
     m_Voxels.resize(volume, 0); // 0 = empty
 
@@ -40,7 +39,6 @@ void Chunk::Clear() {
     std::fill(m_Voxels.begin(), m_Voxels.end(), false);
 }
 
-
 void Chunk::SetResolution(int newResolution) {
     if (newResolution < 1 || newResolution > 256) return; // Hard cap to prevent hangs
 
@@ -53,6 +51,7 @@ void Chunk::SetResolution(int newResolution) {
 
     Rebuild();
 }
+
 
 void Chunk::Rebuild() {
     switch (m_Type) {
