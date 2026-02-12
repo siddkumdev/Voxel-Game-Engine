@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include <glm.hpp>
-#include "chunk.h"
+#include "Chunk.h"
 
 class Voxelizer {
 public:

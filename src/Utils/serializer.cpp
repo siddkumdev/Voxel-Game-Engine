@@ -1,118 +1,101 @@
 #include "serializer.h"
 #include <fstream>
+#include <vector>
+#include "voxelizer.h"
 #include <iostream>
-#include "voxelizer.h" // Needed to reload models
+
+template<typename T>
+void Write(std::ofstream& out, const T& val) {
+    out.write((const char*)&val, sizeof(T));
+}
+
+template<typename T>
+void Read(std::ifstream& in, T& val) {
+    in.read((char*)&val, sizeof(T));
+}
+
+void WriteString(std::ofstream& out, const std::string& str) {
+    int len = (int)str.length();
+    Write(out, len);
+    if (len > 0) out.write(str.c_str(), len);
+}
+
+std::string ReadString(std::ifstream& in) {
+    int len;
+    Read(in, len);
+    if (len <= 0) return "";
+    std::string str(len, '\0');
+    in.read(&str[0], len);
+    return str;
+}
 
 bool LevelSerializer::SaveLevel(const std::string& path, const std::vector<Chunk*>& chunks) {
     std::ofstream out(path, std::ios::binary);
-    if (!out.is_open()) return false;
+    if (!out) return false;
 
-    int count = chunks.size();
-    out.write((char*)&count, sizeof(int));
+    int count = (int)chunks.size();
+    Write(out, count);
 
     for (Chunk* c : chunks) {
-        // 1. Name
-        int nameLen = c->name.length();
-        out.write((char*)&nameLen, sizeof(int));
-        out.write(c->name.c_str(), nameLen);
-
-        // 2. Resolution
-        int res = c->GetResolution(); 
-        out.write((char*)&res, sizeof(int));
-
-        // 3. Physics & Transform
-        out.write((char*)&c->physicsBody.position, sizeof(glm::vec3));
-        out.write((char*)&c->physicsBody.rotation, sizeof(glm::vec3));
-        out.write((char*)&c->physicsBody.scale, sizeof(glm::vec3)); 
+        WriteString(out, c->name);
+        Write(out, c->GetResolution());
         
-        out.write((char*)&c->physicsBody.isStatic, sizeof(bool));
-        out.write((char*)&c->physicsBody.useGravity, sizeof(bool));
-        out.write((char*)&c->physicsBody.resistance, sizeof(float)); 
+        Write(out, c->physicsBody.position);
+        Write(out, c->physicsBody.rotation);
+        Write(out, c->physicsBody.scale);
+        Write(out, c->physicsBody.isStatic);
+        Write(out, c->physicsBody.useGravity);
+        Write(out, c->physicsBody.resistance);
         
-        // 4. Visuals
-        out.write((char*)&c->color, sizeof(glm::vec3));
+        Write(out, c->color);
+        Write(out, (int)c->m_Type);
+        Write(out, c->m_Radius);
+        Write(out, c->m_Height);
 
-        // 5. Generation Data
-        int typeInt = (int)c->m_Type;
-        out.write((char*)&typeInt, sizeof(int));
-        out.write((char*)&c->m_Radius, sizeof(int));
-        out.write((char*)&c->m_Height, sizeof(int));
-
-        // 6. Model Path (NEW)
-        // We always save this, even if empty, to keep the format simple
-        int pathLen = c->m_ModelPath.length();
-        out.write((char*)&pathLen, sizeof(int));
-        if (pathLen > 0) {
-            out.write(c->m_ModelPath.c_str(), pathLen);
-        }
+        WriteString(out, c->m_ModelPath);
     }
-
-    out.close();
     return true;
 }
 
 bool LevelSerializer::LoadLevel(const std::string& path, std::vector<Chunk*>& chunks) {
     std::ifstream in(path, std::ios::binary);
-    if (!in.is_open()) return false;
+    if (!in) return false;
 
     int count;
-    in.read((char*)&count, sizeof(int));
+    Read(in, count);
 
     for (int i = 0; i < count; i++) {
-        // 1. Name
-        int nameLen;
-        in.read((char*)&nameLen, sizeof(int));
-        std::string name(nameLen, '\0');
-        in.read(&name[0], nameLen);
-
-        // 2. Resolution
+        std::string name = ReadString(in);
         int res;
-        in.read((char*)&res, sizeof(int));
+        Read(in, res);
 
         Chunk* c = new Chunk(res);
         c->name = name;
 
-        // 3. Physics & Transform
-        in.read((char*)&c->physicsBody.position, sizeof(glm::vec3));
-        in.read((char*)&c->physicsBody.rotation, sizeof(glm::vec3));
-        in.read((char*)&c->physicsBody.scale, sizeof(glm::vec3)); 
+        Read(in, c->physicsBody.position);
+        Read(in, c->physicsBody.rotation);
+        Read(in, c->physicsBody.scale);
+        Read(in, c->physicsBody.isStatic);
+        Read(in, c->physicsBody.useGravity);
+        Read(in, c->physicsBody.resistance);
         
-        in.read((char*)&c->physicsBody.isStatic, sizeof(bool));
-        in.read((char*)&c->physicsBody.useGravity, sizeof(bool));
-        in.read((char*)&c->physicsBody.resistance, sizeof(float)); 
-
-        // 4. Visuals
-        in.read((char*)&c->color, sizeof(glm::vec3));
-
-        // 5. Generation Data
-        int typeInt;
-        in.read((char*)&typeInt, sizeof(int));
-        c->m_Type = (ChunkType)typeInt;
+        Read(in, c->color);
         
-        in.read((char*)&c->m_Radius, sizeof(int));
-        in.read((char*)&c->m_Height, sizeof(int));
+        int type;
+        Read(in, type);
+        c->m_Type = (ChunkType)type;
 
-        // 6. Model Path (NEW)
-        int pathLen;
-        in.read((char*)&pathLen, sizeof(int));
-        if (pathLen > 0) {
-            std::string modelPath(pathLen, '\0');
-            in.read(&modelPath[0], pathLen);
-            c->m_ModelPath = modelPath;
-        }
+        Read(in, c->m_Radius);
+        Read(in, c->m_Height);
 
-        // 7. Rebuild Logic
+        c->m_ModelPath = ReadString(in);
+
         if (c->m_Type == ChunkType::Model && !c->m_ModelPath.empty()) {
-            // RELOAD THE MODEL FROM DISK
             Voxelizer::LoadAndVoxelize(c->m_ModelPath, *c);
         } else {
-            // Rebuild procedural shape
             c->Rebuild();
         }
-        
         chunks.push_back(c);
     }
-
-    in.close();
     return true;
 }

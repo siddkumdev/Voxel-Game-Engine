@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 #include "camera.h"
-#include "chunk.h"
+#include "Chunk.h"
 #include "shader.h"
 
 class Application {

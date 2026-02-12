@@ -1,4 +1,4 @@
-#include "chunk.h"
+#include "Chunk.h"
 #include <algorithm>
 #include <glad/glad.h>
 #include <iostream>
@@ -6,9 +6,11 @@
 Chunk::Chunk(int resolution) 
     : m_ChunkSize(resolution), m_VertexCount(0)
 {
+    // Resize voxel storage
     int volume = m_ChunkSize * m_ChunkSize * m_ChunkSize;
-    m_Voxels.resize(volume, 0); // 0 = empty
+    m_Voxels.resize(volume, 0);
 
+    // Init OpenGL buffers
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 }
@@ -25,7 +27,7 @@ bool Chunk::IsActive(int x, int y, int z) const {
 
 void Chunk::SetBlock(int x, int y, int z, bool active) {
     if (IsValidCoordinate(x, y, z)) {
-        m_Voxels[x + y * m_ChunkSize + z * m_ChunkSize * m_ChunkSize] = active;
+        m_Voxels[x + y * m_ChunkSize + z * m_ChunkSize * m_ChunkSize] = active ? 1 : 0;
     }
 }
 
@@ -36,22 +38,20 @@ bool Chunk::IsValidCoordinate(int x, int y, int z) const {
 }
 
 void Chunk::Clear() {
-    std::fill(m_Voxels.begin(), m_Voxels.end(), false);
+    std::fill(m_Voxels.begin(), m_Voxels.end(), 0);
 }
 
 void Chunk::SetResolution(int newResolution) {
-    if (newResolution < 1 || newResolution > 256) return; // Hard cap to prevent hangs
+    if (newResolution < 2) newResolution = 2;
+    if (newResolution > 256) newResolution = 256;
 
     m_ChunkSize = newResolution;
-
-    // Resize Memory
     int volume = m_ChunkSize * m_ChunkSize * m_ChunkSize;
-    m_Voxels.clear();
-    m_Voxels.resize(volume, 0);
+    m_Voxels.resize(volume);
+    Clear();
 
     Rebuild();
 }
-
 
 void Chunk::Rebuild() {
     switch (m_Type) {
@@ -62,3 +62,29 @@ void Chunk::Rebuild() {
     }
 }
 
+void Chunk::RecalculateBounds() {
+    boundsMin = glm::ivec3(m_ChunkSize);
+    boundsMax = glm::ivec3(0);
+    bool empty = true;
+
+    for (int x = 0; x < m_ChunkSize; x++) {
+        for (int y = 0; y < m_ChunkSize; y++) {
+            for (int z = 0; z < m_ChunkSize; z++) {
+                if (IsActive(x, y, z)) {
+                    empty = false;
+                    boundsMin.x = std::min(boundsMin.x, x);
+                    boundsMin.y = std::min(boundsMin.y, y);
+                    boundsMin.z = std::min(boundsMin.z, z);
+                    boundsMax.x = std::max(boundsMax.x, x);
+                    boundsMax.y = std::max(boundsMax.y, y);
+                    boundsMax.z = std::max(boundsMax.z, z);
+                }
+            }
+        }
+    }
+
+    if (empty) {
+        boundsMin = glm::ivec3(0);
+        boundsMax = glm::ivec3(0);
+    }
+}

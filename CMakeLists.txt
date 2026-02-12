@@ -22,10 +22,12 @@ set(DEP_DIR "${CMAKE_SOURCE_DIR}/dependencies")
 # 2. Include Directories
 include_directories(
     "src"
-    "src/Core"
-    "src/Chunk"
-    "src/Gui"
+    "src/Engine"
+    "src/Renderer"
+    "src/Scene"
+    "src/UI"
     "src/Utils"
+    "src/Physics"
     "${DEP_DIR}/GLAD/include"
     "${DEP_DIR}/GLFW/include"
     "${DEP_DIR}/GLM"
@@ -49,11 +51,22 @@ add_executable(VoxelEngine
 
 # 5. Link Libraries (Replacement for your -L and -l flags)
 target_link_directories(VoxelEngine PRIVATE "${DEP_DIR}/GLFW/libs")
-target_link_libraries(VoxelEngine 
-    glfw3 
-    opengl32 
-    gdi32
-)
+
+if (WIN32)
+    target_link_libraries(VoxelEngine
+        glfw3
+        opengl32
+        gdi32
+    )
+else()
+    find_package(OpenGL REQUIRED)
+    target_link_libraries(VoxelEngine
+        glfw3
+        OpenGL::GL
+        dl
+        pthread
+    )
+endif()
 
 target_compile_definitions(VoxelEngine PRIVATE GLFW_INCLUDE_NONE)
 
