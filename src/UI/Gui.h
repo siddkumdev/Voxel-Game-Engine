@@ -1,9 +1,7 @@
 #pragma once
-#include <vector>
-#include <string>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "core.h"
+#include "Application.h"
 
 class GUI {
 public:
@@ -12,4 +10,10 @@ public:
     static void Render(Application& app);
     static void EndFrame();
     static void Shutdown();
+
+    // -- Component Rendering --
+    static void DrawMainMenu(Application& app);
+    static void DrawSceneManager(Application& app);
+    static void DrawInspector(Application& app);
+    static void DrawPopups(Application& app);
 };
