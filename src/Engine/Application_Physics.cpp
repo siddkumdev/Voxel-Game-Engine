@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "serializer.h"
+#include "Explosion.h"
 #include <iostream>
 
 void Application::Update(float deltaTime) {
@@ -30,23 +31,25 @@ void Application::Update(float deltaTime) {
 }
 
 void Application::TriggerExplosion(glm::vec3 target) {
-    PointExplosion exp;
-    exp.center = target;
-    exp.radius = m_ExplosionRadius;
-    exp.force = m_ExplosionForce;
-    exp.falloff = true;
-    exp.falloffFactor = 1.0f;
+    // Create a temporary PointExplosion object to handle logic
+    PointExplosion explosion;
+    explosion.data.center = target;
+    explosion.data.radius = m_ExplosionRadius;
+    explosion.data.force = m_ExplosionForce;
+    explosion.data.falloff = true;
+    explosion.data.falloffFactor = 1.0f;
+    explosion.position = target; // Set transform position as well
 
     std::vector<Chunk*> allNewDebris;
+    std::vector<Chunk*> targets;
 
     for (SceneObject* obj : m_SceneObjects) {
-        // Only Chunks can explode
         if (obj->type == ObjectType::CHUNK) {
-            Chunk* c = static_cast<Chunk*>(obj);
-            std::vector<Chunk*> debris = c->Explode(exp);
-            allNewDebris.insert(allNewDebris.end(), debris.begin(), debris.end());
+            targets.push_back(static_cast<Chunk*>(obj));
         }
     }
+
+    explosion.Detonate(targets, allNewDebris);
 
     // Add generated debris to scene
     for (Chunk* d : allNewDebris) {
@@ -62,7 +65,7 @@ void Application::NewLevel() {
     Chunk* c = new Chunk(16);
     c->GenerateCube();
     c->name = "Default Cube";
-    c->physicsBody.isStatic = true;
+    c->isStatic = true;
     // Set type explicitly if not done in constructor
     c->type = ObjectType::CHUNK; 
     m_SceneObjects.push_back(c);

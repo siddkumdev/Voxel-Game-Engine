@@ -2,7 +2,8 @@
 #include <imgui.h>
 #include <string>
 #include "Application.h"
-#include "type.h" // Required for SceneObject definition
+#include "Scene/SceneObject.h"
+#include "type.h"
 
 // #include "Gui_AddObject.h" 
 

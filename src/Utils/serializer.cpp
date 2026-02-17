@@ -40,12 +40,12 @@ bool LevelSerializer::SaveLevel(const std::string& path, const std::vector<Chunk
         WriteString(out, c->name);
         Write(out, c->GetResolution());
         
-        Write(out, c->physicsBody.position);
-        Write(out, c->physicsBody.rotation);
-        Write(out, c->physicsBody.scale);
-        Write(out, c->physicsBody.isStatic);
-        Write(out, c->physicsBody.useGravity);
-        Write(out, c->physicsBody.resistance);
+        Write(out, c->position);
+        Write(out, c->rotation);
+        Write(out, c->scale);
+        Write(out, c->isStatic);
+        Write(out, c->useGravity);
+        Write(out, c->resistance);
         
         Write(out, c->color);
         Write(out, (int)c->m_Type);
@@ -72,12 +72,12 @@ bool LevelSerializer::LoadLevel(const std::string& path, std::vector<Chunk*>& ch
         Chunk* c = new Chunk(res);
         c->name = name;
 
-        Read(in, c->physicsBody.position);
-        Read(in, c->physicsBody.rotation);
-        Read(in, c->physicsBody.scale);
-        Read(in, c->physicsBody.isStatic);
-        Read(in, c->physicsBody.useGravity);
-        Read(in, c->physicsBody.resistance);
+        Read(in, c->position);
+        Read(in, c->rotation);
+        Read(in, c->scale);
+        Read(in, c->isStatic);
+        Read(in, c->useGravity);
+        Read(in, c->resistance);
         
         Read(in, c->color);
         

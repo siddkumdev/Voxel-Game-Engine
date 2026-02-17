@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "Gui.h"
-#include "type.h" // Ensure SceneObject is visible
+#include "Scene/SceneObject.h" // Ensure SceneObject is visible
+#include "type.h"
 #include <iostream>
 #include <algorithm>
 #include <imgui.h>
@@ -66,7 +67,7 @@ bool Application::Init() {
     Chunk* c = new Chunk(16);
     c->GenerateCube();
     c->name = "Default Cube";
-    c->physicsBody.isStatic = true;
+    c->isStatic = true;
     c->type = ObjectType::CHUNK; // Ensure type is set
     AddObject(c);
 
