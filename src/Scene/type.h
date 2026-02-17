@@ -4,7 +4,8 @@
 
 #include <glm.hpp>
 
-// NEW: Physics Layers for interaction filtering
+
+// Physics Layers for interaction filtering
 enum class PhysicsLayer {
     DEFAULT = 0,
     DEBRIS = 1,
@@ -44,5 +45,29 @@ struct PointExplosion {
     bool falloff;        // Toggle linear falloff
     float falloffFactor; // Strength of falloff (1.0 = standard linear)
 };
+
+enum class ObjectType {
+    CHUNK,
+    EXPLOSION
+};
+
+struct SceneObject {
+    ObjectType type;
+    std::string name;
+    RigidBody physicsBody;
+    glm::vec3 color = glm::vec3(1.0f); // Added Color
+
+    virtual ~SceneObject() = default;
+
+    // Added Virtual Methods so Application can call them on any object
+    virtual void UpdatePhysics(float dt) {} 
+    virtual void Render(Shader& shader) {} 
+    
+    // Default AABB based on position and scale
+    virtual std::pair<glm::vec3, glm::vec3> GetAABB() const {
+        return { physicsBody.position, physicsBody.position + physicsBody.scale }; 
+    }
+};
+
 
 #endif

@@ -1,17 +1,26 @@
 #include "Application.h"
 #include "Gui.h"
+#include "type.h" // Ensure SceneObject is visible
 #include <iostream>
+#include <algorithm>
 #include <imgui.h>
+
+// Note: Ensure Application.h defines m_SceneObjects as std::vector<SceneObject*>
+// and m_SelectedObject as SceneObject*
 
 Application::Application()
     : m_Camera(glm::vec3(0.0f, 0.0f, 2.0f))
 {
     m_LastX = 1280 / 2.0f;
     m_LastY = 720 / 2.0f;
+    m_SelectedObject = nullptr;
 }
 
 Application::~Application() {
-    for (Chunk* c : m_SceneObjects) delete c;
+    // SceneObject defines a virtual destructor, so this is safe for both Chunks and Explosions
+    for (SceneObject* c : m_SceneObjects) delete c;
+    m_SceneObjects.clear();
+
     delete m_Shader;
     GUI::Shutdown();
     if (m_Window) glfwDestroyWindow(m_Window);
@@ -58,7 +67,8 @@ bool Application::Init() {
     c->GenerateCube();
     c->name = "Default Cube";
     c->physicsBody.isStatic = true;
-    m_SceneObjects.push_back(c);
+    c->type = ObjectType::CHUNK; // Ensure type is set
+    AddObject(c);
 
     return true;
 }
@@ -86,13 +96,13 @@ void Application::Run() {
         }
 
         Update(m_DeltaTime);
-        Render();
+        Render(); 
     }
 }
 
-void Application::AddChunk(Chunk* chunk) {
-    m_SceneObjects.push_back(chunk);
-    m_SelectedObject = chunk;
+void Application::AddObject(SceneObject* obj) {
+    m_SceneObjects.push_back(obj);
+    m_SelectedObject = obj;
 }
 
 void Application::DeleteSelectedObject() {
@@ -100,7 +110,7 @@ void Application::DeleteSelectedObject() {
     auto it = std::find(m_SceneObjects.begin(), m_SceneObjects.end(), m_SelectedObject);
     if (it != m_SceneObjects.end()) {
         m_SceneObjects.erase(it);
-        delete m_SelectedObject;
+        delete m_SelectedObject; // Virtual destructor calls correct cleanup
         m_SelectedObject = nullptr;
     }
 }

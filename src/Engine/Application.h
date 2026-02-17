@@ -22,13 +22,17 @@ public:
     static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 
     // Getters for GUI
-    std::vector<Chunk*>& GetSceneObjects() { return m_SceneObjects; }
-    Chunk*& GetSelectedObject() { return m_SelectedObject; }
+    std::vector<SceneObject*>& GetSceneObjects() { return m_SceneObjects; }
+    SceneObject*& GetSelectedObject() { return m_SelectedObject; }
     Camera& GetCamera() { return m_Camera; }
+
+    // Setter for selected object (used by GUI)
+    void SetSelectedObject(SceneObject* obj) { m_SelectedObject = obj; }
 
     // Public method to add objects (used by GUI)
     void AddChunk(Chunk* chunk);
     void DeleteSelectedObject();
+    void AddObject(SceneObject* obj); // NEW: Generic add for any SceneObject type
 
     // Level management
     void NewLevel();
@@ -66,8 +70,8 @@ private:
     Camera m_Camera;
     Shader* m_Shader = nullptr;
 
-    std::vector<Chunk*> m_SceneObjects;
-    Chunk* m_SelectedObject = nullptr;
+    std::vector<SceneObject*> m_SceneObjects;
+    SceneObject* m_SelectedObject = nullptr;
 
     // Time
     float m_DeltaTime = 0.0f;

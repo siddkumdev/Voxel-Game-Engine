@@ -21,19 +21,28 @@ void Application::Render() {
     m_Shader->setMat4("view", view);
     m_Shader->setMat4("projection", projection);
 
-    for (Chunk* chunk : m_SceneObjects) {
-        glm::vec3 finalColor = chunk->color;
-        if (chunk == m_SelectedObject) {
+    for (SceneObject* obj : m_SceneObjects) {
+        glm::vec3 finalColor = obj->color;
+        if (obj == m_SelectedObject) {
             finalColor += glm::vec3(0.2f);
         }
 
         int colorLoc = glGetUniformLocation(m_Shader->ID, "uColor");
         glUniform3f(colorLoc, finalColor.x, finalColor.y, finalColor.z);
 
-        chunk->Render(*m_Shader, true);
+        // Render Chunks specifically (they need the showGrid boolean)
+        if (obj->type == ObjectType::CHUNK) {
+            Chunk* chunk = static_cast<Chunk*>(obj);
+            chunk->Render(*m_Shader, true); 
+        } 
+        else {
+            // Generic render for non-chunk objects
+            obj->Render(*m_Shader); 
+        }
     }
 
     if (m_SelectedObject) {
+        // Assuming GetAABB is virtual
         std::pair<glm::vec3, glm::vec3> aabb = m_SelectedObject->GetAABB();
         RenderDebugBox(aabb.first, aabb.second, glm::vec3(1.0f, 0.0f, 0.0f));
     }

@@ -16,4 +16,7 @@ public:
     static void DrawSceneManager(Application& app);
     static void DrawInspector(Application& app);
     static void DrawPopups(Application& app);
+
+    // -- Add Object Popup --
+    static void DrawAddObjectButton(Application& app);
 };

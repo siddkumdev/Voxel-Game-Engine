@@ -86,15 +86,18 @@ void Application::HandleSelection(float mouseX, float mouseY, int screenW, int s
 
     // 2. Raycast against Scene
     float closestDist = 10000.0f;
-    Chunk* hitObject = nullptr;
+    SceneObject* hitObject = nullptr; // Changed from Chunk*
 
-    for (Chunk* chunk : m_SceneObjects) {
-        std::pair<glm::vec3, glm::vec3> aabb = chunk->GetAABB();
+    for (SceneObject* obj : m_SceneObjects) {
+        // Assuming GetAABB is virtual in SceneObject. 
+        // If not, use: if(obj->type == ObjectType::CHUNK) { Chunk* c = (Chunk*)obj; ... }
+        std::pair<glm::vec3, glm::vec3> aabb = obj->GetAABB();
+        
         float dist;
         if (IntersectRayAABB(ray, aabb.first, aabb.second, dist)) {
             if (dist < closestDist) {
                 closestDist = dist;
-                hitObject = chunk;
+                hitObject = obj;
             }
         }
     }

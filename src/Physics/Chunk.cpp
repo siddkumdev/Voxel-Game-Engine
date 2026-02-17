@@ -7,6 +7,8 @@ Chunk::Chunk(int resolution)
     : m_ChunkSize(resolution), m_VertexCount(0)
 {
     // Resize voxel storage
+    type = ObjectType::CHUNK; // Ensure type is set for SceneObject base
+    color = glm::vec3(0.2f, 0.8f, 0.2f); // Default color for chunks
     int volume = m_ChunkSize * m_ChunkSize * m_ChunkSize;
     m_Voxels.resize(volume, 0);
 
@@ -87,4 +89,9 @@ void Chunk::RecalculateBounds() {
         boundsMin = glm::ivec3(0);
         boundsMax = glm::ivec3(0);
     }
+}
+
+void Chunk::Render(Shader& shader) {
+    // Call your specific render with grid enabled/disabled as you prefer
+    Render(shader, false); 
 }

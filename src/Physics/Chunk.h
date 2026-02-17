@@ -10,7 +10,7 @@
 
 enum class ChunkType { Cube, Sphere, Cylinder, Model };
 
-class Chunk {
+class Chunk : public SceneObject {
 public:
     Chunk(int resolution = 32);
     ~Chunk();
@@ -47,9 +47,8 @@ public:
     // -- Rendering --
     void UpdateMesh();
     void Render(Shader& shader, bool showGrid = false);
-
+    void Render(Shader& shader) override;
     // -- Properties --
-    glm::vec3 color = glm::vec3(0.2f, 0.8f, 0.2f);
     std::string name = "Object";
     ChunkType m_Type = ChunkType::Cube;
     std::string m_ModelPath = "";
