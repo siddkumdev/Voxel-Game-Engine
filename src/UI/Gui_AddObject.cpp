@@ -19,7 +19,7 @@ void GUI::DrawAddObjectButton(Application& app) {
             Chunk* c = new Chunk(16);
             c->GenerateCube();
             c->name = "Cube " + std::to_string(app.GetSceneObjects().size());
-            c->physicsBody.isStatic = true;
+            c->isStatic = true;
             c->type = ObjectType::CHUNK; 
             app.AddObject(c); 
         }
@@ -28,7 +28,7 @@ void GUI::DrawAddObjectButton(Application& app) {
             Chunk* c = new Chunk(32);
             c->GenerateSphere(15);
             c->name = "Sphere " + std::to_string(app.GetSceneObjects().size());
-            c->physicsBody.isStatic = true;
+            c->isStatic = true;
             c->type = ObjectType::CHUNK;
             app.AddObject(c);
         }
@@ -37,7 +37,7 @@ void GUI::DrawAddObjectButton(Application& app) {
             Chunk* c = new Chunk(20);
             c->GenerateCylinder(8, 16);
             c->name = "Cylinder " + std::to_string(app.GetSceneObjects().size());
-            c->physicsBody.isStatic = true;
+            c->isStatic = true;
             c->type = ObjectType::CHUNK;
             app.AddObject(c);
         }
@@ -46,15 +46,15 @@ void GUI::DrawAddObjectButton(Application& app) {
 
         // --- LOGIC OBJECTS ---
         if (ImGui::MenuItem("Point Explosion")) {
-            Explosion* exp = new Explosion();
+            PointExplosion* exp = new PointExplosion();
             exp->name = "Explosion " + std::to_string(app.GetSceneObjects().size());
             
             // FIX 1: Explicitly set the type so the Inspector knows what to show
             exp->type = ObjectType::EXPLOSION; 
             
             // FIX 2: Initialize physics position to match logic center
-            exp->physicsBody.position = glm::vec3(0.0f, 5.0f, 0.0f);
-            exp->data.center = exp->physicsBody.position;
+            exp->position = glm::vec3(0.0f, 5.0f, 0.0f);
+            exp->data.center = exp->position;
 
             app.AddObject(exp);
         }

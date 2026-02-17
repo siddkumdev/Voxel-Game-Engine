@@ -72,13 +72,13 @@ void Chunk::Render(Shader& shader, bool showGrid) {
     if (m_VertexCount == 0 && m_Vertices.empty()) return;
 
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, physicsBody.position);
-    model = glm::rotate(model, glm::radians(physicsBody.rotation.x), glm::vec3(1, 0, 0));
-    model = glm::rotate(model, glm::radians(physicsBody.rotation.y), glm::vec3(0, 1, 0));
-    model = glm::rotate(model, glm::radians(physicsBody.rotation.z), glm::vec3(0, 0, 1));
+    model = glm::translate(model, position);
+    model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1, 0, 0));
+    model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0, 1, 0));
+    model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0, 0, 1));
 
     // Scale local grid (0..Size) to world (Scale)
-    glm::vec3 voxelScale = physicsBody.scale / (float)m_ChunkSize;
+    glm::vec3 voxelScale = scale / (float)m_ChunkSize;
     model = glm::scale(model, voxelScale);
 
     shader.use();

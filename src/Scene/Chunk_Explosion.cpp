@@ -11,16 +11,16 @@ struct Shard {
     glm::vec3 centerAcc = glm::vec3(0.0f);
 };
 
-std::vector<Chunk*> Chunk::Explode(const PointExplosion& exp) {
+std::vector<Chunk*> Chunk::Explode(const ExplosionData& exp) {
     std::vector<Chunk*> debris;
-    if (exp.force <= 0.0f || physicsBody.layer == PhysicsLayer::DEBRIS) return debris;
+    if (exp.force <= 0.0f || layer == PhysicsLayer::DEBRIS) return debris;
 
-    float voxelSize = physicsBody.scale.x / (float)m_ChunkSize;
-    glm::vec3 localCenter = (exp.center - physicsBody.position) / voxelSize;
+    float voxelSize = scale.x / (float)m_ChunkSize;
+    glm::vec3 localCenter = (exp.center - position) / voxelSize;
     float localRadius = exp.radius / voxelSize;
 
     // 1. Calculate Seeds
-    int numSeeds = std::clamp((int)(exp.force / (physicsBody.resistance + 0.01f) * 2.0f), 2, 50);
+    int numSeeds = std::clamp((int)(exp.force / (resistance + 0.01f) * 2.0f), 2, 50);
     std::vector<glm::vec3> seeds;
 
     for (int i = 0; i < numSeeds; i++) {
@@ -72,27 +72,27 @@ std::vector<Chunk*> Chunk::Explode(const PointExplosion& exp) {
 
         Chunk* d = new Chunk(dim);
         d->name = "Shard";
-        d->physicsBody.layer = PhysicsLayer::DEBRIS;
-        d->physicsBody.useGravity = true;
+        d->layer = PhysicsLayer::DEBRIS;
+        d->useGravity = true;
 
         // Scale and Position
-        d->physicsBody.scale = glm::vec3(dim) * voxelSize;
+        d->scale = glm::vec3(dim) * voxelSize;
         glm::vec3 offset = glm::vec3(s.minB - 1); // -1 padding offset
-        d->physicsBody.position = physicsBody.position + (offset * voxelSize);
+        d->position = position + (offset * voxelSize);
 
         for (auto& v : s.voxels) {
             d->SetBlock(v.x - s.minB.x + 1, v.y - s.minB.y + 1, v.z - s.minB.z + 1, true);
         }
 
         // Physics Impulse
-        d->physicsBody.mass = s.voxels.size() * 0.1f;
+        d->mass = s.voxels.size() * 0.1f;
 
-        glm::vec3 center = (s.centerAcc / (float)s.voxels.size()) * voxelSize + physicsBody.position;
+        glm::vec3 center = (s.centerAcc / (float)s.voxels.size()) * voxelSize + position;
         glm::vec3 dir = glm::normalize(center - exp.center);
         if (glm::length(dir) < 0.001f) dir = {0,1,0};
 
-        d->physicsBody.velocity = dir * std::min((exp.force / d->physicsBody.mass) * 5.0f, 50.0f);
-        d->physicsBody.rotation = glm::vec3(rand()%360, rand()%360, rand()%360);
+        d->velocity = dir * std::min((exp.force / d->mass) * 5.0f, 50.0f);
+        d->rotation = glm::vec3(rand()%360, rand()%360, rand()%360);
 
         d->RecalculateBounds();
         d->UpdateMesh();

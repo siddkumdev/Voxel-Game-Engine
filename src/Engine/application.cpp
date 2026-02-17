@@ -66,7 +66,7 @@ bool Application::Init() {
     Chunk* c = new Chunk(16);
     c->GenerateCube();
     c->name = "Default Cube";
-    c->physicsBody.isStatic = true;
+    c->isStatic = true;
     c->type = ObjectType::CHUNK; // Ensure type is set
     AddObject(c);
 

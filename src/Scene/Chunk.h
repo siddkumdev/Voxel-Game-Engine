@@ -7,27 +7,23 @@
 #include <cstdint>
 #include "shader.h"
 #include "type.h"
+#include "../Physics/RigidBody.h"
 
 enum class ChunkType { Cube, Sphere, Cylinder, Model };
 
-class Chunk : public SceneObject {
+class Chunk : public RigidBody {
 public:
     Chunk(int resolution = 32);
     ~Chunk();
 
-    // -- Physics & Transform --
-    RigidBody physicsBody;
-    void UpdatePhysics(float deltaTime);
-
-    bool CheckCollision(const Chunk& other) const;
-    void ResolveCollision(Chunk& other);
-
     // Returns debris chunks
-    std::vector<Chunk*> Explode(const PointExplosion& explosion);
+    std::vector<Chunk*> Explode(const ExplosionData& explosion);
 
-    glm::vec3 GetWorldSize() const { return physicsBody.scale; }
-    glm::vec3 GetPosition() const { return physicsBody.position; }
-    std::pair<glm::vec3, glm::vec3> GetAABB() const;
+    glm::vec3 GetWorldSize() const { return scale; }
+    glm::vec3 GetPosition() const { return position; }
+
+    // Override GetAABB for voxel-based bounds
+    std::pair<glm::vec3, glm::vec3> GetAABB() const override;
 
     // -- Generation --
     void GenerateTerrain();
@@ -48,8 +44,8 @@ public:
     void UpdateMesh();
     void Render(Shader& shader, bool showGrid = false);
     void Render(Shader& shader) override;
+
     // -- Properties --
-    std::string name = "Object";
     ChunkType m_Type = ChunkType::Cube;
     std::string m_ModelPath = "";
 

@@ -42,18 +42,18 @@ void GUI::DrawInspector(Application& app) {
                 // Transform
                 ImGui::TextColored(ImVec4(1,1,0,1), "Transform");
                 float speed = ImGui::GetIO().KeyShift ? 0.0001f : 0.1f;
-                ImGui::DragFloat3("Pos", &chunk->physicsBody.position[0], speed);
-                ImGui::DragFloat3("Rot", &chunk->physicsBody.rotation[0], 1.0f);
-                ImGui::DragFloat3("Scale", &chunk->physicsBody.scale[0], speed);
+                ImGui::DragFloat3("Pos", &chunk->position[0], speed);
+                ImGui::DragFloat3("Rot", &chunk->rotation[0], 1.0f);
+                ImGui::DragFloat3("Scale", &chunk->scale[0], speed);
 
                 ImGui::Separator();
 
                 // Properties
                 ImGui::TextColored(ImVec4(1,1,0,1), "Properties");
-                ImGui::Checkbox("Static", &chunk->physicsBody.isStatic);
+                ImGui::Checkbox("Static", &chunk->isStatic);
                 ImGui::SameLine();
-                ImGui::Checkbox("Gravity", &chunk->physicsBody.useGravity);
-                ImGui::DragFloat("Resistance", &chunk->physicsBody.resistance, 0.5f);
+                ImGui::Checkbox("Gravity", &chunk->useGravity);
+                ImGui::DragFloat("Resistance", &chunk->resistance, 0.5f);
                 ImGui::ColorEdit3("Color", (float*)&chunk->color);
 
                 ImGui::Separator();
@@ -74,14 +74,14 @@ void GUI::DrawInspector(Application& app) {
             // EXPLOSION INSPECTOR
             // =========================================================
             case ObjectType::EXPLOSION: {
-                Explosion* exp = dynamic_cast<Explosion*>(selected);
+                PointExplosion* exp = dynamic_cast<PointExplosion*>(selected);
 
                 // 1. Transform Information (Standard Pos/Rot/Scale)
                 ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "Transform");
                 float speed = ImGui::GetIO().KeyShift ? 0.0001f : 0.1f;
-                ImGui::DragFloat3("Pos", &exp->physicsBody.position[0], speed);
-                ImGui::DragFloat3("Rot", &exp->physicsBody.rotation[0], 1.0f);
-                ImGui::DragFloat3("Scale", &exp->physicsBody.scale[0], speed);
+                ImGui::DragFloat3("Pos", &exp->position[0], speed);
+                ImGui::DragFloat3("Rot", &exp->rotation[0], 1.0f);
+                ImGui::DragFloat3("Scale", &exp->scale[0], speed);
 
                 ImGui::Separator();
 
@@ -103,7 +103,7 @@ void GUI::DrawInspector(Application& app) {
                 if (ImGui::Button("TRIGGER NOW", ImVec2(-1, 40))) {
                     
                     // SYNC: Ensure the explosion happens at the object's current position
-                    exp->data.center = exp->physicsBody.position;
+                    exp->data.center = exp->position;
 
                     std::vector<Chunk*> debris;
                     std::vector<Chunk*> targets;

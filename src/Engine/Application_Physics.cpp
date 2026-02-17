@@ -30,7 +30,7 @@ void Application::Update(float deltaTime) {
 }
 
 void Application::TriggerExplosion(glm::vec3 target) {
-    PointExplosion exp;
+    ExplosionData exp;
     exp.center = target;
     exp.radius = m_ExplosionRadius;
     exp.force = m_ExplosionForce;
@@ -62,7 +62,7 @@ void Application::NewLevel() {
     Chunk* c = new Chunk(16);
     c->GenerateCube();
     c->name = "Default Cube";
-    c->physicsBody.isStatic = true;
+    c->isStatic = true;
     // Set type explicitly if not done in constructor
     c->type = ObjectType::CHUNK; 
     m_SceneObjects.push_back(c);
