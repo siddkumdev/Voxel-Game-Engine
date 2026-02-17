@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "Gui.h"
-#include "type.h" // Ensure SceneObject is visible
+#include "Scene/SceneObject.h" // Ensure SceneObject is visible
+#include "type.h"
 #include <iostream>
 #include <algorithm>
 #include <imgui.h>

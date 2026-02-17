@@ -7,6 +7,7 @@
 #include <cstdint>
 #include "shader.h"
 #include "type.h"
+#include "SceneObject.h"
 #include "../Physics/RigidBody.h"
 
 enum class ChunkType { Cube, Sphere, Cylinder, Model };
@@ -15,9 +16,6 @@ class Chunk : public RigidBody {
 public:
     Chunk(int resolution = 32);
     ~Chunk();
-
-    // Returns debris chunks
-    std::vector<Chunk*> Explode(const ExplosionData& explosion);
 
     glm::vec3 GetWorldSize() const { return scale; }
     glm::vec3 GetPosition() const { return position; }

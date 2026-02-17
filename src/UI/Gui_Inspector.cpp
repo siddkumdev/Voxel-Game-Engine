@@ -1,5 +1,6 @@
 #include "Gui.h"
-#include "type.h"       
+#include "type.h"
+#include "Scene/SceneObject.h"
 #include "Chunk.h"      
 #include "Explosion.h"  
 #include "voxelizer.h"

@@ -1,5 +1,6 @@
 #pragma once
 #include "type.h"
+#include "SceneObject.h"
 #include "Chunk.h"
 #include <string>
 #include <vector>
@@ -20,14 +21,8 @@ public:
     }
 
     // Trigger the explosion on a list of chunks
-    void Detonate(std::vector<Chunk*>& chunks, std::vector<Chunk*>& outDebris) {
-        // Sync center with position
-        data.center = position;
+    void Detonate(std::vector<Chunk*>& chunks, std::vector<Chunk*>& outDebris);
 
-        for (Chunk* c : chunks) {
-            if (!c) continue;
-            std::vector<Chunk*> newDebris = c->Explode(data);
-            outDebris.insert(outDebris.end(), newDebris.begin(), newDebris.end());
-        }
-    }
+private:
+    std::vector<Chunk*> ExplodeChunk(Chunk* chunk);
 };

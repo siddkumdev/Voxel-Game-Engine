@@ -2,6 +2,7 @@
 #define RIGIDBODY_H
 
 #include "../Scene/type.h"
+#include "../Scene/SceneObject.h"
 
 class RigidBody : public SceneObject {
 public:

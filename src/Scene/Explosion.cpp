@@ -1,8 +1,9 @@
-#include "Chunk.h"
+#include "Explosion.h"
 #include <algorithm>
 #include <map>
 #include <iostream>
 #include <gtc/random.hpp>
+#include <cmath>
 
 struct Shard {
     std::vector<glm::ivec3> voxels;
@@ -11,22 +12,37 @@ struct Shard {
     glm::vec3 centerAcc = glm::vec3(0.0f);
 };
 
-std::vector<Chunk*> Chunk::Explode(const ExplosionData& exp) {
-    std::vector<Chunk*> debris;
-    if (exp.force <= 0.0f || layer == PhysicsLayer::DEBRIS) return debris;
+void PointExplosion::Detonate(std::vector<Chunk*>& chunks, std::vector<Chunk*>& outDebris) {
+    // Sync center with position
+    data.center = position;
 
-    float voxelSize = scale.x / (float)m_ChunkSize;
-    glm::vec3 localCenter = (exp.center - position) / voxelSize;
-    float localRadius = exp.radius / voxelSize;
+    for (Chunk* c : chunks) {
+        if (!c) continue;
+        std::vector<Chunk*> newDebris = ExplodeChunk(c);
+        outDebris.insert(outDebris.end(), newDebris.begin(), newDebris.end());
+    }
+}
+
+std::vector<Chunk*> PointExplosion::ExplodeChunk(Chunk* chunk) {
+    std::vector<Chunk*> debris;
+
+    // Check if chunk is debris or force is 0
+    if (data.force <= 0.0f || chunk->layer == PhysicsLayer::DEBRIS) return debris;
+
+    float voxelSize = chunk->scale.x / (float)chunk->GetResolution();
+    glm::vec3 localCenter = (data.center - chunk->position) / voxelSize;
+    float localRadius = data.radius / voxelSize;
 
     // 1. Calculate Seeds
-    int numSeeds = std::clamp((int)(exp.force / (resistance + 0.01f) * 2.0f), 2, 50);
+    int numSeeds = std::clamp((int)(data.force / (chunk->resistance + 0.01f) * 2.0f), 2, 50);
     std::vector<glm::vec3> seeds;
+
+    int chunkSize = chunk->GetResolution();
 
     for (int i = 0; i < numSeeds; i++) {
         // Random point in sphere
         glm::vec3 p = glm::ballRand(localRadius) + localCenter;
-        p = glm::clamp(p, glm::vec3(0), glm::vec3(m_ChunkSize-1));
+        p = glm::clamp(p, glm::vec3(0), glm::vec3(chunkSize-1));
         seeds.push_back(p);
     }
 
@@ -36,16 +52,16 @@ std::vector<Chunk*> Chunk::Explode(const ExplosionData& exp) {
 
     int r = (int)std::ceil(localRadius);
     glm::ivec3 min = glm::max(glm::ivec3(0), glm::ivec3(localCenter) - r);
-    glm::ivec3 max = glm::min(glm::ivec3(m_ChunkSize-1), glm::ivec3(localCenter) + r);
+    glm::ivec3 max = glm::min(glm::ivec3(chunkSize-1), glm::ivec3(localCenter) + r);
 
     for (int x = min.x; x <= max.x; x++) {
         for (int y = min.y; y <= max.y; y++) {
             for (int z = min.z; z <= max.z; z++) {
-                if (!IsActive(x, y, z)) continue;
+                if (!chunk->IsActive(x, y, z)) continue;
                 if (glm::distance(glm::vec3(x, y, z), localCenter) > localRadius) continue;
 
                 // Remove from parent
-                SetBlock(x, y, z, false);
+                chunk->SetBlock(x, y, z, false);
                 modified = true;
 
                 int best = 0; float minD = 1e9;
@@ -78,7 +94,7 @@ std::vector<Chunk*> Chunk::Explode(const ExplosionData& exp) {
         // Scale and Position
         d->scale = glm::vec3(dim) * voxelSize;
         glm::vec3 offset = glm::vec3(s.minB - 1); // -1 padding offset
-        d->position = position + (offset * voxelSize);
+        d->position = chunk->position + (offset * voxelSize);
 
         for (auto& v : s.voxels) {
             d->SetBlock(v.x - s.minB.x + 1, v.y - s.minB.y + 1, v.z - s.minB.z + 1, true);
@@ -87,11 +103,11 @@ std::vector<Chunk*> Chunk::Explode(const ExplosionData& exp) {
         // Physics Impulse
         d->mass = s.voxels.size() * 0.1f;
 
-        glm::vec3 center = (s.centerAcc / (float)s.voxels.size()) * voxelSize + position;
-        glm::vec3 dir = glm::normalize(center - exp.center);
+        glm::vec3 center = (s.centerAcc / (float)s.voxels.size()) * voxelSize + chunk->position;
+        glm::vec3 dir = glm::normalize(center - data.center);
         if (glm::length(dir) < 0.001f) dir = {0,1,0};
 
-        d->velocity = dir * std::min((exp.force / d->mass) * 5.0f, 50.0f);
+        d->velocity = dir * std::min((data.force / d->mass) * 5.0f, 50.0f);
         d->rotation = glm::vec3(rand()%360, rand()%360, rand()%360);
 
         d->RecalculateBounds();
@@ -100,8 +116,8 @@ std::vector<Chunk*> Chunk::Explode(const ExplosionData& exp) {
     }
 
     if (modified) {
-        RecalculateBounds();
-        UpdateMesh();
+        chunk->RecalculateBounds();
+        chunk->UpdateMesh();
     }
     return debris;
 }
