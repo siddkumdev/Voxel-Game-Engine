@@ -8,6 +8,8 @@
 
 class Shader; // Forward declaration
 
+// Track which axis is being interacted with
+
 class SceneObject {
 public:
     ObjectType type;
@@ -19,13 +21,15 @@ public:
     glm::vec3 scale        = glm::vec3(1.0f);
     glm::vec3 color        = glm::vec3(1.0f);
 
+    // --- NEW: Gizmo State ---
+    bool isSelected           = false;
+
     virtual ~SceneObject() = default;
 
-    // Added Virtual Methods so Application can call them on any object
     virtual void UpdatePhysics(float dt) {}
     virtual void Render(Shader& shader) {}
+    
 
-    // Default AABB based on position and scale
     virtual std::pair<glm::vec3, glm::vec3> GetAABB() const {
         return { position, position + scale };
     }

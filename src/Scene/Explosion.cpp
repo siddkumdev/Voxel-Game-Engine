@@ -4,7 +4,9 @@
 #include <iostream>
 #include <gtc/random.hpp>
 #include <cmath>
-
+#include <glad/glad.h> // Or whatever OpenGL loader your engine uses
+#include <vector>
+#include <gtc/matrix_transform.hpp>
 struct Shard {
     std::vector<glm::ivec3> voxels;
     glm::ivec3 minB = glm::ivec3(10000);
@@ -120,4 +122,75 @@ std::vector<Chunk*> PointExplosion::ExplodeChunk(Chunk* chunk) {
         chunk->UpdateMesh();
     }
     return debris;
+}
+
+
+
+void PointExplosion::GenerateSphereGizmo() {
+    std::vector<glm::vec3> vertices;
+    int segments = 32; 
+    
+    // Generate 3 intersecting circles
+    for (int i = 0; i < segments; i++) {
+        float theta1 = ((float)i / segments) * 2.0f * glm::pi<float>();
+        float theta2 = ((float)(i + 1) / segments) * 2.0f * glm::pi<float>();
+
+        // We generate it at local 0,0,0 with a radius of 1. 
+        // We will scale and translate it in the vertex shader.
+
+        // XY plane
+        vertices.push_back(glm::vec3(cos(theta1), sin(theta1), 0.0f));
+        vertices.push_back(glm::vec3(cos(theta2), sin(theta2), 0.0f));
+
+        // XZ plane
+        vertices.push_back(glm::vec3(cos(theta1), 0.0f, sin(theta1)));
+        vertices.push_back(glm::vec3(cos(theta2), 0.0f, sin(theta2)));
+
+        // YZ plane
+        vertices.push_back(glm::vec3(0.0f, cos(theta1), sin(theta1)));
+        vertices.push_back(glm::vec3(0.0f, cos(theta2), sin(theta2)));
+    }
+
+    gizmoVertexCount = vertices.size();
+
+    // Generate and bind VAO/VBO
+    glGenVertexArrays(1, &gizmoVAO);
+    glGenBuffers(1, &gizmoVBO);
+
+    glBindVertexArray(gizmoVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, gizmoVBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+}
+
+void PointExplosion::Render(Shader& shader) {
+    // Check internal state before drawing
+    if (!visible) return;
+
+    if (gizmoVAO == 0) {
+        GenerateSphereGizmo();
+    }
+
+    // 1. Calculate the Model matrix with the correct explosion radius
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, position); 
+    model = glm::scale(model, glm::vec3(data.radius));
+
+    // 2. Pass it to the shader using your Shader class helper method
+    shader.setMat4("model", model);
+
+    // 3. Pass the color (Light Green for explosions)
+    int colorLoc = glGetUniformLocation(shader.ID, "uColor");
+    if (colorLoc != -1) {
+        glUniform3f(colorLoc, 0.2f, 1.0f, 0.2f); 
+    }
+
+    // Draw the wireframe
+    glBindVertexArray(gizmoVAO);
+    glDrawArrays(GL_LINES, 0, gizmoVertexCount);
+    glBindVertexArray(0);
 }

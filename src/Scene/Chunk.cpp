@@ -66,6 +66,8 @@ void Chunk::Rebuild() {
     }
 }
 
+// ... [Keep everything above Render exactly as it was] ...
+
 void Chunk::RecalculateBounds() {
     boundsMin = glm::ivec3(m_ChunkSize);
     boundsMax = glm::ivec3(0);
@@ -93,10 +95,7 @@ void Chunk::RecalculateBounds() {
     }
 }
 
-void Chunk::Render(Shader& shader) {
-    // Call your specific render with grid enabled/disabled as you prefer
-    Render(shader, false); 
-}
+// Updated Render function using internal state
 
 std::pair<glm::vec3, glm::vec3> Chunk::GetAABB() const {
     glm::vec3 voxelSize = scale / (float)m_ChunkSize;

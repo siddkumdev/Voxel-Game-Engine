@@ -1,13 +1,10 @@
 #include "Application.h"
 #include "Gui.h"
-#include "Scene/SceneObject.h" // Ensure SceneObject is visible
+#include "Scene/SceneObject.h" 
 #include "type.h"
 #include <iostream>
 #include <algorithm>
 #include <imgui.h>
-
-// Note: Ensure Application.h defines m_SceneObjects as std::vector<SceneObject*>
-// and m_SelectedObject as SceneObject*
 
 Application::Application()
     : m_Camera(glm::vec3(0.0f, 0.0f, 2.0f))
@@ -18,11 +15,12 @@ Application::Application()
 }
 
 Application::~Application() {
-    // SceneObject defines a virtual destructor, so this is safe for both Chunks and Explosions
     for (SceneObject* c : m_SceneObjects) delete c;
     m_SceneObjects.clear();
 
     delete m_Shader;
+    delete m_GizmoShader; 
+    
     GUI::Shutdown();
     if (m_Window) glfwDestroyWindow(m_Window);
     glfwTerminate();
@@ -33,6 +31,7 @@ bool Application::Init() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_SAMPLES, 4); // Keep MSAA for smooth gizmos
 
     m_Window = glfwCreateWindow(1280, 720, "Voxel Engine - Editor Mode", NULL, NULL);
     if (m_Window == NULL) {
@@ -55,6 +54,8 @@ bool Application::Init() {
         return false;
     }
 
+    glEnable(GL_MULTISAMPLE); // Keep MSAA
+
     GUI::Init(m_Window);
 
     glEnable(GL_DEPTH_TEST);
@@ -62,13 +63,17 @@ bool Application::Init() {
     glCullFace(GL_BACK);
 
     m_Shader = new Shader("shaders/Basic.glsl");
+    
+    m_GizmoShader = new Shader("shaders/Gizmo.glsl"); 
+    // UPDATED: Use the correct renderer class
+    m_TransformGizmo_Renderer.Init();
 
     // Default Cube
     Chunk* c = new Chunk(16);
     c->GenerateCube();
     c->name = "Default Cube";
     c->isStatic = true;
-    c->type = ObjectType::CHUNK; // Ensure type is set
+    c->type = ObjectType::CHUNK;
     AddObject(c);
 
     return true;
@@ -85,15 +90,41 @@ void Application::Run() {
 
         ProcessInput();
 
-        if (m_MouseClicked) {
-             if (!ImGui::GetIO().WantCaptureMouse) {
-                int width, height;
-                glfwGetWindowSize(m_Window, &width, &height);
-                double xpos, ypos;
-                glfwGetCursorPos(m_Window, &xpos, &ypos);
-                HandleSelection((float)xpos, (float)ypos, width, height);
-             }
-             m_MouseClicked = false;
+        if (!ImGui::GetIO().WantCaptureMouse) {
+            int width, height;
+            glfwGetWindowSize(m_Window, &width, &height);
+            double xpos, ypos;
+            glfwGetCursorPos(m_Window, &xpos, &ypos);
+
+            // 1. Convert to Normalized Device Coordinates (NDC)
+            float x_ndc = (2.0f * (float)xpos) / width - 1.0f;
+            float y_ndc = 1.0f - (2.0f * (float)ypos) / height;
+            glm::vec4 ray_clip(x_ndc, y_ndc, -1.0f, 1.0f);
+            
+            // 2. Convert to Eye Space
+            glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
+            glm::vec4 ray_eye = glm::inverse(projection) * ray_clip;
+            ray_eye = glm::vec4(ray_eye.x, ray_eye.y, -1.0f, 0.0f); 
+            
+            // 3. Convert to World Space
+            glm::mat4 view = m_Camera.GetViewMatrix();
+            glm::vec3 ray_world = glm::normalize(glm::vec3(glm::inverse(view) * ray_eye));
+            glm::vec3 ray_origin = m_Camera.Position;
+
+            // 4. Update Gizmo Interaction every frame
+            // UPDATED: Now uses the standalone logic class instead of SceneObject
+            m_TransformGizmo.HandleInteraction(ray_origin, ray_world, m_LeftClickHolding, m_SelectedObject);
+
+            // 5. Standard Selection
+            if (m_MouseClicked) {
+                // UPDATED: Now asks the logic class if an axis is hovered
+                if (m_SelectedObject == nullptr || m_TransformGizmo.GetHoveredAxis() == GizmoAxis::None) {
+                    HandleSelection((float)xpos, (float)ypos, width, height);
+                }
+                m_MouseClicked = false;
+            }
+        } else {
+            m_MouseClicked = false; 
         }
 
         Update(m_DeltaTime);
@@ -103,7 +134,7 @@ void Application::Run() {
 
 void Application::AddObject(SceneObject* obj) {
     m_SceneObjects.push_back(obj);
-    m_SelectedObject = obj;
+    SetSelectedObject(obj); 
 }
 
 void Application::DeleteSelectedObject() {
@@ -111,7 +142,7 @@ void Application::DeleteSelectedObject() {
     auto it = std::find(m_SceneObjects.begin(), m_SceneObjects.end(), m_SelectedObject);
     if (it != m_SceneObjects.end()) {
         m_SceneObjects.erase(it);
-        delete m_SelectedObject; // Virtual destructor calls correct cleanup
+        delete m_SelectedObject; 
         m_SelectedObject = nullptr;
     }
 }

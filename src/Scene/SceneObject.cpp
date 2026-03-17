@@ -1,5 +1,2 @@
 #include "SceneObject.h"
-
-// Currently no implementation needed as SceneObject is fully inline
-// But created to satisfy the requirement of "SceneObject that implements some of the functions"
-// and for future expansion.
+// Note: This is a very simple base class. The Chunk class will inherit from this and add its own voxel data and rendering logic.

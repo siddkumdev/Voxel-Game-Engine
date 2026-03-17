@@ -4,6 +4,9 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
 #include <imgui.h>
+#include <Explosion.h>
+// Make sure the path matches your structure
+#include "TransformGizmo_Renderer.h" 
 
 void Application::Render() {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -30,21 +33,25 @@ void Application::Render() {
         int colorLoc = glGetUniformLocation(m_Shader->ID, "uColor");
         glUniform3f(colorLoc, finalColor.x, finalColor.y, finalColor.z);
 
-        // Render Chunks specifically (they need the showGrid boolean)
-        if (obj->type == ObjectType::CHUNK) {
-            Chunk* chunk = static_cast<Chunk*>(obj);
-            chunk->Render(*m_Shader, true); 
-        } 
-        else {
-            // Generic render for non-chunk objects
-            obj->Render(*m_Shader); 
-        }
+        // One clean polymorphic call. 
+        // The Chunk will now internally check its own `showGrid` variable.
+        obj->Render(*m_Shader); 
     }
 
+    // Debug Drawing & Gizmos for Selected Objects
     if (m_SelectedObject) {
-        // Assuming GetAABB is virtual
-        std::pair<glm::vec3, glm::vec3> aabb = m_SelectedObject->GetAABB();
-        RenderDebugBox(aabb.first, aabb.second, glm::vec3(1.0f, 0.0f, 0.0f));
+        // 1. Render Debug Box
+        if (m_SelectedObject->type == ObjectType::CHUNK) {
+            // FIX: Call the updated signature that accepts the object pointer directly!
+            RenderDebugBox(m_SelectedObject, glm::vec3(1.0f, 1.0f, 1.0f));
+        }
+
+        // 2. Render Transform Gizmo
+        m_GizmoShader->use();
+        m_GizmoShader->setMat4("view", view);
+        m_GizmoShader->setMat4("projection", projection);
+        
+        m_TransformGizmo_Renderer.Draw(m_SelectedObject, m_TransformGizmo, *m_GizmoShader, m_Camera.Position);
     }
 
     GUI::Render(*this);
@@ -70,13 +77,16 @@ void Application::InitDebugCube() {
     glEnableVertexAttribArray(0);
 }
 
-void Application::RenderDebugBox(const glm::vec3& min, const glm::vec3& max, const glm::vec3& color) {
+void Application::RenderDebugBox(SceneObject* obj, const glm::vec3& color) {
     if (m_DebugCubeVAO == 0) InitDebugCube();
 
-    glm::vec3 size = max - min;
+    // Match the Chunk's exact matrix transformation
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, min);
-    model = glm::scale(model, size);
+    model = glm::translate(model, obj->position);
+    model = glm::rotate(model, glm::radians(obj->rotation.x), glm::vec3(1, 0, 0));
+    model = glm::rotate(model, glm::radians(obj->rotation.y), glm::vec3(0, 1, 0));
+    model = glm::rotate(model, glm::radians(obj->rotation.z), glm::vec3(0, 0, 1));
+    model = glm::scale(model, obj->scale);
 
     m_Shader->setMat4("model", model);
     int colorLoc = glGetUniformLocation(m_Shader->ID, "uColor");

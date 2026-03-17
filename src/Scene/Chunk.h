@@ -40,8 +40,7 @@ public:
 
     // -- Rendering --
     void UpdateMesh();
-    void Render(Shader& shader, bool showGrid = false);
-    void Render(Shader& shader) override;
+    void Render(Shader& shader) override; // Only the polymorphic render function remains
 
     // -- Properties --
     ChunkType m_Type = ChunkType::Cube;
@@ -57,6 +56,9 @@ public:
     glm::ivec3 boundsMin = glm::ivec3(0);
     glm::ivec3 boundsMax = glm::ivec3(16);
     void RecalculateBounds();
+
+    // Editor/Debug state
+    bool showGrid = false; // Added internal state for the wireframe grid
 
 private:
     int m_ChunkSize;

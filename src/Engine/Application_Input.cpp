@@ -60,6 +60,10 @@ void Application::ProcessInput() {
         if (glfwGetKey(m_Window, GLFW_KEY_E) == GLFW_PRESS) m_Camera.ProcessKeyboard(UP, m_DeltaTime, sprint);
         if (glfwGetKey(m_Window, GLFW_KEY_Q) == GLFW_PRESS) m_Camera.ProcessKeyboard(DOWN, m_DeltaTime, sprint);
     } else {
+        if (glfwGetKey(m_Window, GLFW_KEY_W) == GLFW_PRESS) m_TransformGizmo.SetMode(GizmoMode::Translate);
+        if (glfwGetKey(m_Window, GLFW_KEY_S) == GLFW_PRESS) m_TransformGizmo.SetMode(GizmoMode::Scale);
+        if (glfwGetKey(m_Window, GLFW_KEY_R) == GLFW_PRESS) m_TransformGizmo.SetMode(GizmoMode::Rotate);
+
         if (m_RightClickHolding) {
             glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             m_RightClickHolding = false;
@@ -86,11 +90,9 @@ void Application::HandleSelection(float mouseX, float mouseY, int screenW, int s
 
     // 2. Raycast against Scene
     float closestDist = 10000.0f;
-    SceneObject* hitObject = nullptr; // Changed from Chunk*
+    SceneObject* hitObject = nullptr; 
 
     for (SceneObject* obj : m_SceneObjects) {
-        // Assuming GetAABB is virtual in SceneObject. 
-        // If not, use: if(obj->type == ObjectType::CHUNK) { Chunk* c = (Chunk*)obj; ... }
         std::pair<glm::vec3, glm::vec3> aabb = obj->GetAABB();
         
         float dist;
@@ -108,10 +110,12 @@ void Application::HandleSelection(float mouseX, float mouseY, int screenW, int s
             glm::vec3 hitPoint = ray.origin + (ray.direction * closestDist);
             TriggerExplosion(hitPoint);
         } else {
-            m_SelectedObject = hitObject;
+            // UPDATED: Use the setter so isSelected toggles correctly
+            SetSelectedObject(hitObject); 
         }
     } else {
-        if (!m_ExplosionMode) m_SelectedObject = nullptr;
+        // UPDATED: Use the setter to deselect
+        if (!m_ExplosionMode) SetSelectedObject(nullptr); 
     }
 }
 
@@ -125,7 +129,7 @@ void Application::OnMouse(double xposIn, double yposIn) {
     float xoffset = xpos - m_LastX;
     float yoffset = m_LastY - ypos;
     m_LastX = xpos; m_LastY = ypos;
-
+    
     m_Camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
@@ -134,7 +138,12 @@ void Application::OnScroll(double xoffset, double yoffset) {
 }
 
 void Application::OnMouseButton(int button, int action, int mods) {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        m_MouseClicked = true;
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) {
+            m_MouseClicked = true;
+            m_LeftClickHolding = true; // UPDATED: Track press
+        } else if (action == GLFW_RELEASE) {
+            m_LeftClickHolding = false; // UPDATED: Track release
+        }
     }
 }

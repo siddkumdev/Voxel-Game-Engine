@@ -67,8 +67,7 @@ void Chunk::AddFace(const glm::vec3& p, const glm::vec3& u, const glm::vec3& r, 
     add(p2); add(p4); add(p3);
     m_VertexCount += 6;
 }
-
-void Chunk::Render(Shader& shader, bool showGrid) {
+void Chunk::Render(Shader& shader) {
     if (m_VertexCount == 0 && m_Vertices.empty()) return;
 
     glm::mat4 model = glm::mat4(1.0f);
@@ -80,13 +79,13 @@ void Chunk::Render(Shader& shader, bool showGrid) {
     // Scale local grid (0..Size) to world (Scale)
     glm::vec3 voxelScale = scale / (float)m_ChunkSize;
     model = glm::scale(model, voxelScale);
-
     shader.use();
     shader.setMat4("model", model);
 
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, m_VertexCount > 0 ? m_VertexCount : m_Vertices.size() / 6);
 
+    // Wireframe Grid Rendering
     if (showGrid) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glEnable(GL_POLYGON_OFFSET_LINE);

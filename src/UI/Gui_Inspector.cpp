@@ -88,7 +88,7 @@ void GUI::DrawInspector(Application& app) {
 
                 // 2. All Explosion Properties
                 ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "Explosion Properties");
-                
+                ImGui::Checkbox("Visible", &exp->visible);
                 ImGui::DragFloat("Radius", &exp->data.radius, 0.1f, 0.0f, 100.0f);
                 ImGui::DragFloat("Force", &exp->data.force, 1.0f, 0.0f, 5000.0f);
                 

@@ -6,6 +6,8 @@
 #include "camera.h"
 #include "Chunk.h"
 #include "shader.h"
+#include "TransformGizmo_Renderer.h"
+#include "TransformGizmo.h"
 
 class Application {
 public:
@@ -27,12 +29,16 @@ public:
     Camera& GetCamera() { return m_Camera; }
 
     // Setter for selected object (used by GUI)
-    void SetSelectedObject(SceneObject* obj) { m_SelectedObject = obj; }
-
+    void SetSelectedObject(SceneObject* obj) { 
+        if (m_SelectedObject) m_SelectedObject->isSelected = false; // Deselect old
+        m_SelectedObject = obj; 
+        if (m_SelectedObject) m_SelectedObject->isSelected = true;  // Select new
+    }
+    
     // Public method to add objects (used by GUI)
     void AddChunk(Chunk* chunk);
     void DeleteSelectedObject();
-    void AddObject(SceneObject* obj); // NEW: Generic add for any SceneObject type
+    void AddObject(SceneObject* obj); 
 
     // Level management
     void NewLevel();
@@ -40,7 +46,7 @@ public:
     void LoadLevel(const std::string& path);
 
     // Explosion trigger (for testing)
-    void TriggerExplosion(glm::vec3 center); // NEW: Helper to spawn explosion
+    void TriggerExplosion(glm::vec3 center); 
 
     // Public variables for GUI to access directly
     bool m_ExplosionMode = false;
@@ -49,9 +55,9 @@ public:
 
 private:
     struct Ray {
-    glm::vec3 origin;
-    glm::vec3 direction;
-};
+        glm::vec3 origin;
+        glm::vec3 direction;
+    };
     static bool IntersectRayAABB(const Ray& ray, glm::vec3 boxMin, glm::vec3 boxMax, float& tMin);
     void ProcessInput();
     void Update(float deltaTime);
@@ -69,6 +75,12 @@ private:
 
     Camera m_Camera;
     Shader* m_Shader = nullptr;
+    Shader* m_DebugShader = nullptr;
+    
+    // NEW: Gizmo rendering components
+    Shader* m_GizmoShader = nullptr; 
+    TransformGizmo m_TransformGizmo;   
+    TransformGizmo_Renderer m_TransformGizmo_Renderer; // MISSING IN YOUR UPLOAD
 
     std::vector<SceneObject*> m_SceneObjects;
     SceneObject* m_SelectedObject = nullptr;
@@ -82,10 +94,11 @@ private:
     float m_LastY;
     bool m_FirstMouse = true;
     bool m_RightClickHolding = false;
+    bool m_LeftClickHolding = false; 
     bool m_MouseClicked = false;
 
     unsigned int m_DebugCubeVAO = 0;
     unsigned int m_DebugCubeVBO = 0;
     void InitDebugCube();
-    void RenderDebugBox(const glm::vec3& min, const glm::vec3& max, const glm::vec3& color);
+    void RenderDebugBox(SceneObject* obj, const glm::vec3& color);
 };
