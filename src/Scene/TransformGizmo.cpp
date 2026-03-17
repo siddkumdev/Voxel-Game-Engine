@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cfloat>
 #include <gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <gtx/euler_angles.hpp>
 bool TransformGizmo::IntersectRayAABB(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const glm::vec3& boxMin, const glm::vec3& boxMax, float& t) {
     glm::vec3 invDir = 1.0f / rayDir;
     glm::vec3 t0 = (boxMin - rayOrigin) * invDir;
@@ -85,12 +87,26 @@ void TransformGizmo::HandleInteraction(const glm::vec3& rayOrigin, const glm::ve
                 float angleRad = std::atan2(glm::dot(glm::cross(m_InitialHitVector, currentVec), planeNormal), 
                                             glm::dot(m_InitialHitVector, currentVec));
                 
-                glm::vec3 rotDelta(0.0f);
-                if (m_DraggingAxis == GizmoAxis::X) rotDelta.x = glm::degrees(angleRad);
-                if (m_DraggingAxis == GizmoAxis::Y) rotDelta.y = glm::degrees(angleRad);
-                if (m_DraggingAxis == GizmoAxis::Z) rotDelta.z = glm::degrees(angleRad);
+                // Reconstruct the initial rotation matrix
+                glm::mat4 initialRotMat = glm::mat4(1.0f);
+                initialRotMat = glm::rotate(initialRotMat, glm::radians(m_InitialRotation.x), glm::vec3(1, 0, 0));
+                initialRotMat = glm::rotate(initialRotMat, glm::radians(m_InitialRotation.y), glm::vec3(0, 1, 0));
+                initialRotMat = glm::rotate(initialRotMat, glm::radians(m_InitialRotation.z), glm::vec3(0, 0, 1));
+
+                // Apply the local rotation delta
+                glm::mat4 deltaRot = glm::mat4(1.0f);
+                if (m_DraggingAxis == GizmoAxis::X) deltaRot = glm::rotate(deltaRot, angleRad, glm::vec3(1, 0, 0));
+                if (m_DraggingAxis == GizmoAxis::Y) deltaRot = glm::rotate(deltaRot, angleRad, glm::vec3(0, 1, 0));
+                if (m_DraggingAxis == GizmoAxis::Z) deltaRot = glm::rotate(deltaRot, angleRad, glm::vec3(0, 0, 1));
+
+                // New rotation is initial rotation * local delta
+                glm::mat4 newRotMat = initialRotMat * deltaRot;
+
+                // Extract Euler angles using the same convention as the engine applies them (XYZ)
+                glm::vec3 euler;
+                glm::extractEulerAngleXYZ(newRotMat, euler.x, euler.y, euler.z);
                 
-                selectedObject->rotation = m_InitialRotation + rotDelta;
+                selectedObject->rotation = glm::degrees(euler);
             } else {
                 float currentOffset = glm::dot(hitPoint - dragPivot, axisVec);
                 if (m_Mode == GizmoMode::Translate) {
