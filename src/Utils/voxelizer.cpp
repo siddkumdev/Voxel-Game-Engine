@@ -7,11 +7,10 @@ bool Voxelizer::LoadAndVoxelize(const std::string& path, Chunk& targetChunk) {
     std::vector<glm::vec3> vertices;
     std::vector<int> indices;
 
-    // Check file extension to dispatch loader
     size_t dot = path.find_last_of(".");
     if (dot == std::string::npos) return false;
     std::string ext = path.substr(dot + 1);
-    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower); // Lowercase extension
+    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
     bool loaded = false;
 
@@ -28,7 +27,6 @@ bool Voxelizer::LoadAndVoxelize(const std::string& path, Chunk& targetChunk) {
 
     if (!loaded) return false;
 
-    // NEW: Save the path so we can serialize it later
     targetChunk.m_ModelPath = path;
 
     targetChunk.LoadMesh(vertices, indices);

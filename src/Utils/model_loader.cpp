@@ -13,23 +13,22 @@ bool ModelLoader::LoadOBJ(const std::string& path, std::vector<glm::vec3>& out_v
     char line[128];
 
     while (fgets(line, 128, file)) {
-        // Parse Vertex Position
+
         if (line[0] == 'v' && line[1] == ' ') {
             glm::vec3 v;
             if (sscanf(line, "v %f %f %f", &v.x, &v.y, &v.z) == 3) {
                 temp_vertices.push_back(v);
             }
         } 
-        // Parse Faces (Triangles)
+
         else if (line[0] == 'f' && line[1] == ' ') {
             int v1, v2, v3;
-            // Robust parsing for: "f v1 v2 v3", "f v1/vt1/vn1 ...", "f v1//vn1 ..."
+
             if (sscanf(line, "f %d/%*s %d/%*s %d/%*s", &v1, &v2, &v3) == 3 ||
                 sscanf(line, "f %d//%*d %d//%*d %d//%*d", &v1, &v2, &v3) == 3 ||
                 sscanf(line, "f %d %d %d", &v1, &v2, &v3) == 3) 
             {
-                // OBJ uses 1-based indexing; convert to 0-based
-                // We "unroll" the vertices to match your project's previous layout
+
                 out_vertices.push_back(temp_vertices[v1 - 1]);
                 out_indices.push_back((int)out_indices.size());
 

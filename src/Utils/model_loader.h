@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <glm.hpp> // As per project convention
+#include <glm.hpp>
 
 class ModelLoader {
 public:

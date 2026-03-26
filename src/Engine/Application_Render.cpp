@@ -5,7 +5,7 @@
 #include <gtc/type_ptr.hpp>
 #include <imgui.h>
 #include <Explosion.h>
-// Make sure the path matches your structure
+
 #include "TransformGizmo_Renderer.h" 
 
 void Application::Render() {
@@ -33,24 +33,20 @@ void Application::Render() {
         int colorLoc = glGetUniformLocation(m_Shader->ID, "uColor");
         glUniform3f(colorLoc, finalColor.x, finalColor.y, finalColor.z);
 
-        // One clean polymorphic call. 
-        // The Chunk will now internally check its own `showGrid` variable.
         obj->Render(*m_Shader); 
     }
 
-    // Debug Drawing & Gizmos for Selected Objects
     if (m_SelectedObject) {
-        // 1. Render Debug Box
+
         if (m_SelectedObject->type == ObjectType::CHUNK) {
-            // FIX: Call the updated signature that accepts the object pointer directly!
+
             RenderDebugBox(m_SelectedObject, glm::vec3(1.0f, 1.0f, 1.0f));
         }
 
-        // 2. Render Transform Gizmo
         m_GizmoShader->use();
         m_GizmoShader->setMat4("view", view);
         m_GizmoShader->setMat4("projection", projection);
-        
+
         m_TransformGizmo_Renderer.Draw(m_SelectedObject, m_TransformGizmo, *m_GizmoShader, m_Camera.Position);
     }
 
@@ -61,11 +57,11 @@ void Application::Render() {
 
 void Application::InitDebugCube() {
     float vertices[] = {
-        // Line loop for bottom face
+
         0,0,0, 1,0,0,  1,0,0, 1,0,1,  1,0,1, 0,0,1,  0,0,1, 0,0,0,
-        // Line loop for top face
+
         0,1,0, 1,1,0,  1,1,0, 1,1,1,  1,1,1, 0,1,1,  0,1,1, 0,1,0,
-        // Vertical connectors
+
         0,0,0, 0,1,0,  1,0,0, 1,1,0,  1,0,1, 1,1,1,  0,0,1, 0,1,1
     };
     glGenVertexArrays(1, &m_DebugCubeVAO);
@@ -80,7 +76,6 @@ void Application::InitDebugCube() {
 void Application::RenderDebugBox(SceneObject* obj, const glm::vec3& color) {
     if (m_DebugCubeVAO == 0) InitDebugCube();
 
-    // Match the Chunk's exact matrix transformation
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, obj->position);
     model = glm::rotate(model, glm::radians(obj->rotation.x), glm::vec3(1, 0, 0));

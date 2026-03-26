@@ -14,7 +14,6 @@ void Chunk::VoxelizeStoredMesh() {
     Clear();
     if (m_StoredVertices.empty()) return;
 
-    // 1. Calculate Bounds
     float minX = 1e10, minY = 1e10, minZ = 1e10;
     float maxX = -1e10, maxY = -1e10, maxZ = -1e10;
 
@@ -27,7 +26,6 @@ void Chunk::VoxelizeStoredMesh() {
     float maxDim = std::max({maxX - minX, maxY - minY, maxZ - minZ});
     if (maxDim <= 0) maxDim = 1.0f;
 
-    // Scale to fit inside the integer grid
     float scale = (m_ChunkSize - 2) / maxDim;
 
     std::vector<glm::vec3> localVerts(m_StoredVertices.size());
@@ -37,7 +35,6 @@ void Chunk::VoxelizeStoredMesh() {
         localVerts[i].z = (m_StoredVertices[i].z - minZ) * scale + 1.0f;
     }
 
-    // 2. Voxelize (Rasterize Triangles)
     for (size_t i = 0; i < m_StoredIndices.size(); i += 3) {
         glm::vec3 v0 = localVerts[m_StoredIndices[i]];
         glm::vec3 v1 = localVerts[m_StoredIndices[i+1]];

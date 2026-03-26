@@ -17,38 +17,31 @@ public:
     bool Init();
     void Run();
 
-    // Callbacks
     static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
     static void MouseCallback(GLFWwindow* window, double xpos, double ypos);
     static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
     static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 
-    // Getters for GUI
     std::vector<SceneObject*>& GetSceneObjects() { return m_SceneObjects; }
     SceneObject*& GetSelectedObject() { return m_SelectedObject; }
     Camera& GetCamera() { return m_Camera; }
 
-    // Setter for selected object (used by GUI)
     void SetSelectedObject(SceneObject* obj) { 
-        if (m_SelectedObject) m_SelectedObject->isSelected = false; // Deselect old
+        if (m_SelectedObject) m_SelectedObject->isSelected = false;
         m_SelectedObject = obj; 
-        if (m_SelectedObject) m_SelectedObject->isSelected = true;  // Select new
+        if (m_SelectedObject) m_SelectedObject->isSelected = true;
     }
-    
-    // Public method to add objects (used by GUI)
+
     void AddChunk(Chunk* chunk);
     void DeleteSelectedObject();
     void AddObject(SceneObject* obj); 
 
-    // Level management
     void NewLevel();
     void SaveLevel(const std::string& path);
     void LoadLevel(const std::string& path);
 
-    // Explosion trigger (for testing)
     void TriggerExplosion(glm::vec3 center); 
 
-    // Public variables for GUI to access directly
     bool m_ExplosionMode = false;
     float m_ExplosionRadius = 5.0f;
     float m_ExplosionForce = 50.0f;    
@@ -64,7 +57,6 @@ private:
     void Render();
     void HandleSelection(float xpos, float ypos, int width, int height);
 
-    // Internal Input Handlers
     void OnMouse(double xpos, double ypos);
     void OnScroll(double xoffset, double yoffset);
     void OnMouseButton(int button, int action, int mods);
@@ -76,20 +68,17 @@ private:
     Camera m_Camera;
     Shader* m_Shader = nullptr;
     Shader* m_DebugShader = nullptr;
-    
-    // NEW: Gizmo rendering components
+
     Shader* m_GizmoShader = nullptr; 
     TransformGizmo m_TransformGizmo;   
-    TransformGizmo_Renderer m_TransformGizmo_Renderer; // MISSING IN YOUR UPLOAD
+    TransformGizmo_Renderer m_TransformGizmo_Renderer;
 
     std::vector<SceneObject*> m_SceneObjects;
     SceneObject* m_SelectedObject = nullptr;
 
-    // Time
     float m_DeltaTime = 0.0f;
     float m_LastFrame = 0.0f;
 
-    // Input State
     float m_LastX;
     float m_LastY;
     bool m_FirstMouse = true;
