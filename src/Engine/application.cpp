@@ -20,7 +20,7 @@ Application::~Application() {
 
     delete m_Shader;
     delete m_GizmoShader; 
-    
+
     GUI::Shutdown();
     if (m_Window) glfwDestroyWindow(m_Window);
     glfwTerminate();
@@ -31,7 +31,7 @@ bool Application::Init() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_SAMPLES, 4); // Keep MSAA for smooth gizmos
+    glfwWindowHint(GLFW_SAMPLES, 4);
 
     m_Window = glfwCreateWindow(1280, 720, "Voxel Engine - Editor Mode", NULL, NULL);
     if (m_Window == NULL) {
@@ -54,7 +54,7 @@ bool Application::Init() {
         return false;
     }
 
-    glEnable(GL_MULTISAMPLE); // Keep MSAA
+    glEnable(GL_MULTISAMPLE);
 
     GUI::Init(m_Window);
 
@@ -63,12 +63,11 @@ bool Application::Init() {
     glCullFace(GL_BACK);
 
     m_Shader = new Shader("shaders/Basic.glsl");
-    
+
     m_GizmoShader = new Shader("shaders/Gizmo.glsl"); 
-    // UPDATED: Use the correct renderer class
+
     m_TransformGizmo_Renderer.Init();
 
-    // Default Cube
     Chunk* c = new Chunk(16);
     c->GenerateCube();
     c->name = "Default Cube";
@@ -96,28 +95,22 @@ void Application::Run() {
             double xpos, ypos;
             glfwGetCursorPos(m_Window, &xpos, &ypos);
 
-            // 1. Convert to Normalized Device Coordinates (NDC)
             float x_ndc = (2.0f * (float)xpos) / width - 1.0f;
             float y_ndc = 1.0f - (2.0f * (float)ypos) / height;
             glm::vec4 ray_clip(x_ndc, y_ndc, -1.0f, 1.0f);
-            
-            // 2. Convert to Eye Space
+
             glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
             glm::vec4 ray_eye = glm::inverse(projection) * ray_clip;
             ray_eye = glm::vec4(ray_eye.x, ray_eye.y, -1.0f, 0.0f); 
-            
-            // 3. Convert to World Space
+
             glm::mat4 view = m_Camera.GetViewMatrix();
             glm::vec3 ray_world = glm::normalize(glm::vec3(glm::inverse(view) * ray_eye));
             glm::vec3 ray_origin = m_Camera.Position;
 
-            // 4. Update Gizmo Interaction every frame
-            // UPDATED: Now uses the standalone logic class instead of SceneObject
             m_TransformGizmo.HandleInteraction(ray_origin, ray_world, m_LeftClickHolding, m_SelectedObject);
 
-            // 5. Standard Selection
             if (m_MouseClicked) {
-                // UPDATED: Now asks the logic class if an axis is hovered
+
                 if (m_SelectedObject == nullptr || m_TransformGizmo.GetHoveredAxis() == GizmoAxis::None) {
                     HandleSelection((float)xpos, (float)ypos, width, height);
                 }

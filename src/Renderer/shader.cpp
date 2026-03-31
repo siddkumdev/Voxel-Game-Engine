@@ -2,10 +2,9 @@
 #include <gtc/type_ptr.hpp>
 
 Shader::Shader(const char* filepath) {
-    // 1. Parse the Single File
-    // ------------------------------------------------------------------
+
     std::ifstream stream(filepath);
-    
+
     enum class ShaderType {
         NONE = -1,
         VERTEX = 0,
@@ -13,7 +12,7 @@ Shader::Shader(const char* filepath) {
     };
 
     std::string line;
-    std::stringstream ss[2]; // ss[0] = Vertex Code, ss[1] = Fragment Code
+    std::stringstream ss[2];
     ShaderType type = ShaderType::NONE;
 
     while (getline(stream, line)) {
@@ -24,7 +23,7 @@ Shader::Shader(const char* filepath) {
             type = ShaderType::FRAGMENT;
         }
         else {
-            // Append line to the active shader code builder
+
             if (type != ShaderType::NONE) {
                 ss[(int)type] << line << '\n';
             }
@@ -36,40 +35,35 @@ Shader::Shader(const char* filepath) {
     const char* vShaderCode = vertexCode.c_str();
     const char* fShaderCode = fragmentCode.c_str();
 
-    // 2. Compile Shaders (Standard OpenGL stuff)
-    // ------------------------------------------------------------------
     unsigned int vertex, fragment;
     int success;
     char infoLog[512];
 
-    // Vertex Shader
     vertex = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex, 1, &vShaderCode, NULL);
     glCompileShader(vertex);
-    // Check errors
+
     glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(vertex, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
 
-    // Fragment Shader
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragment, 1, &fShaderCode, NULL);
     glCompileShader(fragment);
-    // Check errors
+
     glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(fragment, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
 
-    // Shader Program
     ID = glCreateProgram();
     glAttachShader(ID, vertex);
     glAttachShader(ID, fragment);
     glLinkProgram(ID);
-    // Check linking errors
+
     glGetProgramiv(ID, GL_LINK_STATUS, &success);
     if (!success) {
         glGetProgramInfoLog(ID, 512, NULL, infoLog);
@@ -84,7 +78,6 @@ void Shader::use() {
     glUseProgram(ID); 
 }
 
-// Utility setters...
 void Shader::setBool(const std::string &name, bool value) const {
     glUniform1i(glGetUniformLocation(ID, name.c_str()), (int)value);
 }

@@ -4,7 +4,6 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
 
-// Helper for ray-box intersection
 bool Application::IntersectRayAABB(const Application::Ray& ray, glm::vec3 boxMin, glm::vec3 boxMax, float& tMin) {
     glm::vec3 invDir = 1.0f / ray.direction;
     glm::vec3 t1 = (boxMin - ray.origin) * invDir;
@@ -45,7 +44,6 @@ void Application::ProcessInput() {
     if (glfwGetKey(m_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(m_Window, true);
 
-    // Right-click look mode
     if (glfwGetMouseButton(m_Window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
         if (!m_RightClickHolding) {
             glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -72,7 +70,7 @@ void Application::ProcessInput() {
 }
 
 void Application::HandleSelection(float mouseX, float mouseY, int screenW, int screenH) {
-    // 1. Ray Calculation
+
     float x = (2.0f * mouseX) / screenW - 1.0f;
     float y = 1.0f - (2.0f * mouseY) / screenH;
 
@@ -88,13 +86,12 @@ void Application::HandleSelection(float mouseX, float mouseY, int screenW, int s
     ray.origin = m_Camera.Position;
     ray.direction = ray_wor;
 
-    // 2. Raycast against Scene
     float closestDist = 10000.0f;
     SceneObject* hitObject = nullptr; 
 
     for (SceneObject* obj : m_SceneObjects) {
         std::pair<glm::vec3, glm::vec3> aabb = obj->GetAABB();
-        
+
         float dist;
         if (IntersectRayAABB(ray, aabb.first, aabb.second, dist)) {
             if (dist < closestDist) {
@@ -104,17 +101,16 @@ void Application::HandleSelection(float mouseX, float mouseY, int screenW, int s
         }
     }
 
-    // 3. Handle Result based on Mode
     if (hitObject) {
         if (m_ExplosionMode) {
             glm::vec3 hitPoint = ray.origin + (ray.direction * closestDist);
             TriggerExplosion(hitPoint);
         } else {
-            // UPDATED: Use the setter so isSelected toggles correctly
+
             SetSelectedObject(hitObject); 
         }
     } else {
-        // UPDATED: Use the setter to deselect
+
         if (!m_ExplosionMode) SetSelectedObject(nullptr); 
     }
 }
@@ -129,7 +125,7 @@ void Application::OnMouse(double xposIn, double yposIn) {
     float xoffset = xpos - m_LastX;
     float yoffset = m_LastY - ypos;
     m_LastX = xpos; m_LastY = ypos;
-    
+
     m_Camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
@@ -141,9 +137,9 @@ void Application::OnMouseButton(int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
         if (action == GLFW_PRESS) {
             m_MouseClicked = true;
-            m_LeftClickHolding = true; // UPDATED: Track press
+            m_LeftClickHolding = true;
         } else if (action == GLFW_RELEASE) {
-            m_LeftClickHolding = false; // UPDATED: Track release
+            m_LeftClickHolding = false;
         }
     }
 }

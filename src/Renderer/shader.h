@@ -13,9 +13,8 @@ class Shader {
 public:
     unsigned int ID;
 
-    // CONSTRUCTOR: Now takes only ONE file path
     Shader(const char* filepath);
-    
+
     void use();
     void setBool(const std::string &name, bool value) const;
     void setInt(const std::string &name, int value) const;

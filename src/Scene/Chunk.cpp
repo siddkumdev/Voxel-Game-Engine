@@ -8,13 +8,12 @@
 Chunk::Chunk(int resolution) 
     : m_ChunkSize(resolution), m_VertexCount(0)
 {
-    // Resize voxel storage
-    type = ObjectType::CHUNK; // Ensure type is set for SceneObject base
-    color = glm::vec3(0.2f, 0.8f, 0.2f); // Default color for chunks
+
+    type = ObjectType::CHUNK;
+    color = glm::vec3(0.2f, 0.8f, 0.2f);
     int volume = m_ChunkSize * m_ChunkSize * m_ChunkSize;
     m_Voxels.resize(volume, 0);
 
-    // Init OpenGL buffers
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 }
@@ -66,8 +65,6 @@ void Chunk::Rebuild() {
     }
 }
 
-// ... [Keep everything above Render exactly as it was] ...
-
 void Chunk::RecalculateBounds() {
     boundsMin = glm::ivec3(m_ChunkSize);
     boundsMax = glm::ivec3(0);
@@ -95,8 +92,6 @@ void Chunk::RecalculateBounds() {
     }
 }
 
-// Updated Render function using internal state
-
 std::pair<glm::vec3, glm::vec3> Chunk::GetAABB() const {
     glm::vec3 voxelSize = scale / (float)m_ChunkSize;
 
@@ -106,7 +101,6 @@ std::pair<glm::vec3, glm::vec3> Chunk::GetAABB() const {
     glm::vec3 localCenter = (minV + maxV) * 0.5f * voxelSize;
     glm::vec3 localExtent = (maxV - minV) * 0.5f * voxelSize;
 
-    // Apply Rotation
     glm::mat4 rot = glm::mat4(1.0f);
     rot = glm::rotate(rot, glm::radians(rotation.x), {1,0,0});
     rot = glm::rotate(rot, glm::radians(rotation.y), {0,1,0});

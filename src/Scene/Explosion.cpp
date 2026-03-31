@@ -4,7 +4,7 @@
 #include <iostream>
 #include <gtc/random.hpp>
 #include <cmath>
-#include <glad/glad.h> // Or whatever OpenGL loader your engine uses
+#include <glad/glad.h>
 #include <vector>
 #include <gtc/matrix_transform.hpp>
 struct Shard {
@@ -15,7 +15,7 @@ struct Shard {
 };
 
 void PointExplosion::Detonate(std::vector<Chunk*>& chunks, std::vector<Chunk*>& outDebris) {
-    // Sync center with position
+
     data.center = position;
 
     for (Chunk* c : chunks) {
@@ -28,27 +28,24 @@ void PointExplosion::Detonate(std::vector<Chunk*>& chunks, std::vector<Chunk*>& 
 std::vector<Chunk*> PointExplosion::ExplodeChunk(Chunk* chunk) {
     std::vector<Chunk*> debris;
 
-    // Check if chunk is debris or force is 0
     if (data.force <= 0.0f || chunk->layer == PhysicsLayer::DEBRIS) return debris;
 
     float voxelSize = chunk->scale.x / (float)chunk->GetResolution();
     glm::vec3 localCenter = (data.center - chunk->position) / voxelSize;
     float localRadius = data.radius / voxelSize;
 
-    // 1. Calculate Seeds
     int numSeeds = std::clamp((int)(data.force / (chunk->resistance + 0.01f) * 2.0f), 2, 50);
     std::vector<glm::vec3> seeds;
 
     int chunkSize = chunk->GetResolution();
 
     for (int i = 0; i < numSeeds; i++) {
-        // Random point in sphere
+
         glm::vec3 p = glm::ballRand(localRadius) + localCenter;
         p = glm::clamp(p, glm::vec3(0), glm::vec3(chunkSize-1));
         seeds.push_back(p);
     }
 
-    // 2. Assign Voxels
     std::map<int, Shard> shards;
     bool modified = false;
 
@@ -62,7 +59,6 @@ std::vector<Chunk*> PointExplosion::ExplodeChunk(Chunk* chunk) {
                 if (!chunk->IsActive(x, y, z)) continue;
                 if (glm::distance(glm::vec3(x, y, z), localCenter) > localRadius) continue;
 
-                // Remove from parent
                 chunk->SetBlock(x, y, z, false);
                 modified = true;
 
@@ -81,7 +77,6 @@ std::vector<Chunk*> PointExplosion::ExplodeChunk(Chunk* chunk) {
         }
     }
 
-    // 3. Create Debris
     for (auto& [id, s] : shards) {
         if (s.voxels.empty()) continue;
 
@@ -93,16 +88,14 @@ std::vector<Chunk*> PointExplosion::ExplodeChunk(Chunk* chunk) {
         d->layer = PhysicsLayer::DEBRIS;
         d->useGravity = true;
 
-        // Scale and Position
         d->scale = glm::vec3(dim) * voxelSize;
-        glm::vec3 offset = glm::vec3(s.minB - 1); // -1 padding offset
+        glm::vec3 offset = glm::vec3(s.minB - 1);
         d->position = chunk->position + (offset * voxelSize);
 
         for (auto& v : s.voxels) {
             d->SetBlock(v.x - s.minB.x + 1, v.y - s.minB.y + 1, v.z - s.minB.z + 1, true);
         }
 
-        // Physics Impulse
         d->mass = s.voxels.size() * 0.1f;
 
         glm::vec3 center = (s.centerAcc / (float)s.voxels.size()) * voxelSize + chunk->position;
@@ -124,36 +117,26 @@ std::vector<Chunk*> PointExplosion::ExplodeChunk(Chunk* chunk) {
     return debris;
 }
 
-
-
 void PointExplosion::GenerateSphereGizmo() {
     std::vector<glm::vec3> vertices;
     int segments = 32; 
-    
-    // Generate 3 intersecting circles
+
     for (int i = 0; i < segments; i++) {
         float theta1 = ((float)i / segments) * 2.0f * glm::pi<float>();
         float theta2 = ((float)(i + 1) / segments) * 2.0f * glm::pi<float>();
 
-        // We generate it at local 0,0,0 with a radius of 1. 
-        // We will scale and translate it in the vertex shader.
-
-        // XY plane
         vertices.push_back(glm::vec3(cos(theta1), sin(theta1), 0.0f));
         vertices.push_back(glm::vec3(cos(theta2), sin(theta2), 0.0f));
 
-        // XZ plane
         vertices.push_back(glm::vec3(cos(theta1), 0.0f, sin(theta1)));
         vertices.push_back(glm::vec3(cos(theta2), 0.0f, sin(theta2)));
 
-        // YZ plane
         vertices.push_back(glm::vec3(0.0f, cos(theta1), sin(theta1)));
         vertices.push_back(glm::vec3(0.0f, cos(theta2), sin(theta2)));
     }
 
     gizmoVertexCount = vertices.size();
 
-    // Generate and bind VAO/VBO
     glGenVertexArrays(1, &gizmoVAO);
     glGenBuffers(1, &gizmoVBO);
 
@@ -168,28 +151,24 @@ void PointExplosion::GenerateSphereGizmo() {
 }
 
 void PointExplosion::Render(Shader& shader) {
-    // Check internal state before drawing
+
     if (!visible) return;
 
     if (gizmoVAO == 0) {
         GenerateSphereGizmo();
     }
 
-    // 1. Calculate the Model matrix with the correct explosion radius
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, position); 
     model = glm::scale(model, glm::vec3(data.radius));
 
-    // 2. Pass it to the shader using your Shader class helper method
     shader.setMat4("model", model);
 
-    // 3. Pass the color (Light Green for explosions)
     int colorLoc = glGetUniformLocation(shader.ID, "uColor");
     if (colorLoc != -1) {
         glUniform3f(colorLoc, 0.2f, 1.0f, 0.2f); 
     }
 
-    // Draw the wireframe
     glBindVertexArray(gizmoVAO);
     glDrawArrays(GL_LINES, 0, gizmoVertexCount);
     glBindVertexArray(0);
